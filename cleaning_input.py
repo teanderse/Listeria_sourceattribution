@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Nov  9 14:37:21 2023
-
-@author: tessa
-"""
 
 
 # imports
@@ -43,7 +38,7 @@ for col in cleaned_data.columns[1:-1]:
                                             
 #%% 
 
-# removing columns with 10% mor more missing values
+# removing columns with 10% or more missing values
 
 # values before drop based on missing values
 before_col = cleaned_data.shape[1]
