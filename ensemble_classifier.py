@@ -105,10 +105,13 @@ print(conf_matrix)
 #%%
 
 # dataframe for the probabilityes predicted
+source_true=[label_dict[x] for x in labels_test]
+true_labels = [list(source_true)]
 predictions = [list(source_predict)]
 proba_predict = list(proba_predict.T)
 predictions += [list(x) for x in proba_predict]
-column_headers = ["prediction"]
+df_input = true_labels + predictions  
+column_headers = ["true source","prediction"]
 column_headers += ["probability_{}".format(label_dict[x])for x in range(len(label_dict.keys()))]
 
-probability_df = pd.DataFrame(dict(zip(column_headers, predictions))).round(decimals=3)
+probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
