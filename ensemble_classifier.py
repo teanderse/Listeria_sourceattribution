@@ -6,11 +6,9 @@ import pandas as pd
 import numpy as np 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-from sklearn.feature_selection import VarianceThreshold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
 from sklearn.metrics import ConfusionMatrixDisplay
 
 #%%
@@ -68,8 +66,8 @@ param_grid   = [{'n_estimators': [300, 400, 500], 'class_weight':['balanced', No
 # gridsearch for best parameters 5-fold cross validation
 gs = GridSearchCV(estimator=model, 
                   param_grid=param_grid, 
-                  scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'recall_macro':'recall_macro', 'accurcacy':'accuracy'}), 
-                  cv=7,
+                  scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
+                  cv=5,
                   refit='weighted_f1',
                   return_train_score=True,
                   n_jobs=-1)
@@ -79,17 +77,18 @@ gs = GridSearchCV(estimator=model,
 # fiting model and finding best parameters 
 gs_model = gs.fit(cgMLST_train, labels_train)
 
-print(gs_model.best_params_)
-print(gs_model.best_score_)
-
 # mean performance results for the different parameters
-performance_results_5 = pd.DataFrame(gs_model.cv_results_)
-performance_results_5 = performance_results_5[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+performance_results_cv5 = pd.DataFrame(gs_model.cv_results_)
+performance_results_cv5 = performance_results_cv5[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
                    'mean_test_macro_f1', 'rank_test_macro_f1',
-                   'mean_test_recall_macro', 'rank_test_recall_macro',
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
+# saving performance result training data
+# performance_results_cv5.to_csv("performanceTrainingdata_cv5_no.csv", index=False)
+
 # best model
+print(gs_model.best_params_)
+print(gs_model.best_score_)
 clf = gs_model.best_estimator_
 
 #%% 
@@ -102,23 +101,19 @@ source_predict=[label_dict[x] for x in labelno_predict]
 #%% 
 
 # performance metrics test
-performance_report = classification_report(
+performance_report_test = classification_report(
             labels_test,
             labelno_predict,
             target_names=label_dict.values())
 
-print(performance_report)
+print(performance_report_test)
 
-conf_matrix = confusion_matrix(
+conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labels_test,
-            labelno_predict)
-
-ConfusionMatrixDisplay.from_predictions(
-            labels_test,
-            labelno_predict)
-
-print(label_dict)
-print(conf_matrix)
+            labelno_predict,
+            display_labels=label_dict.values(),
+            xticks_rotation= 'vertical')
+conf_matrix.ax_.set_title("Conf. matrix")
 
 #%%
 
@@ -133,3 +128,6 @@ column_headers = ["true source","prediction"]
 column_headers += ["probability_{}".format(label_dict[x])for x in range(len(label_dict.keys()))]
 
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
+
+# saving performance result test data
+# probability_df.to_csv("probability_test_no.csv", index=False)
