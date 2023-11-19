@@ -31,7 +31,7 @@ encoder = LabelEncoder()
 labels = encoder.fit_transform(labels)
 
 # saving label integer and source name in dictionary
-label_dict = dict(zip(range(len(encoder.classes_)), encoder.classes_))
+label_dict = dict(zip((encoder.transform(encoder.classes_)), encoder.classes_ ))
 
 #%%
 
@@ -60,28 +60,37 @@ print("Droped {} features with variance lower than the threshold".format(before_
 #%%
 
 # setup for random forest model
-model = RandomForestClassifier(class_weight="balanced", random_state=2)
+model = RandomForestClassifier(random_state=2)
 
 # parameters
-param_grid   = [{'n_estimators': [500, 600, 700], 'criterion': ['gini']}]
+param_grid   = [{'n_estimators': [300, 400, 500], 'class_weight':['balanced', None], 'criterion': ['gini']}]
 
-# gridsearch for best parameters 10-fold cross validation
+# gridsearch for best parameters 5-fold cross validation
 gs = GridSearchCV(estimator=model, 
                   param_grid=param_grid, 
-                  scoring='f1_weighted', 
-                  cv=10,
+                  scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'recall_macro':'recall_macro', 'accurcacy':'accuracy'}), 
+                  cv=7,
+                  refit='weighted_f1',
+                  return_train_score=True,
                   n_jobs=-1)
 
 #%%
 
 # fiting model and finding best parameters 
-gs = gs.fit(cgMLST_train, labels_train)
+gs_model = gs.fit(cgMLST_train, labels_train)
 
-print(gs.best_params_)
-print(gs.best_score_)
+print(gs_model.best_params_)
+print(gs_model.best_score_)
+
+# mean performance results for the different parameters
+performance_results_5 = pd.DataFrame(gs_model.cv_results_)
+performance_results_5 = performance_results_5[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+                   'mean_test_macro_f1', 'rank_test_macro_f1',
+                   'mean_test_recall_macro', 'rank_test_recall_macro',
+                   'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # best model
-clf = gs.best_estimator_
+clf = gs_model.best_estimator_
 
 #%% 
 
@@ -92,7 +101,7 @@ source_predict=[label_dict[x] for x in labelno_predict]
 
 #%% 
 
-# performance metrics
+# performance metrics test
 performance_report = classification_report(
             labels_test,
             labelno_predict,
