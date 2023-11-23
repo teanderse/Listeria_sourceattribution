@@ -10,6 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.feature_selection import SelectFromModel
 
 #%%
 
@@ -44,16 +45,33 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 #%% 
 # under construction
 #-------------------------------------------------------------------------
-"""feature_variance = np.var(cgMLST_train)
-max_value = cgMLST_train.max()
 
 # feature reduction
-selector = VarianceThreshold(threshold=1)
-cgMLST_train_red = selector.fit_transform(cgMLST_train)
 
-before_col = cgMLST_train.shape[1]
-after_col = cgMLST_train_red.shape[1]
-print("Droped {} features with variance lower than the threshold".format(before_col-after_col))"""
+# removing no variance features
+unique_train = cgMLST_train.nunique()
+no_var = [i for i, v in enumerate(unique_train) if v == 1]
+removed_features_noVar = unique_train.index[no_var].tolist()
+cgMLST_train_reduced = cgMLST_train.drop(cgMLST_train.columns[no_var], axis=1)
+
+# finding low variance features by threshold for percent unique values
+percentVar_threshold = 2
+low_varPercent = [i for i,v in enumerate(unique_train) if (float(v)/cgMLST_train.shape[0]*100) < percentVar_threshold]
+removed_features_percent = unique_train.index[low_varPercent].tolist()
+
+# finding low variance features by ratio between the frequency of the two most common values
+cgMLST_train_reduced_dummy = cgMLST_train_reduced.apply(lambda x: x.value_counts().values[0:2]).T
+cgMLST_train_reduced_dummy[2] = cgMLST_train_reduced_dummy.apply(lambda x: x[0]/x[1], axis=1)
+percentRatio_threshold = 95/5
+low_varRatio = [i for i,v in enumerate(cgMLST_train_reduced_dummy[2]) if (round(v, 2)) > percentRatio_threshold]
+removed_features_ratio = cgMLST_train_reduced_dummy.index[low_varRatio].tolist()
+
+# removing features with both low percente unique values and ratio between value frquencies
+removed_features = list(set(removed_features_percent) & set(removed_features_ratio))
+cgMLST_train_reduced = cgMLST_train_reduced.drop(columns=removed_features)
+
+# Removing features fron test set 
+
 #-------------------------------------------------------------------------
 #%%
 
@@ -75,26 +93,63 @@ gs = GridSearchCV(estimator=model,
 #%%
 
 # fiting model and finding best parameters 
-gs_model = gs.fit(cgMLST_train, labels_train)
+gs_model1 = gs.fit(cgMLST_train_reduced, labels_train)
 
 # mean performance results for the different parameters
-performance_results_cv5 = pd.DataFrame(gs_model.cv_results_)
-performance_results_cv5 = performance_results_cv5[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+performance_results1 = pd.DataFrame(gs_model1.cv_results_)
+performance_results1 = performance_results1[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
                    'mean_test_macro_f1', 'rank_test_macro_f1',
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-# performance_results_cv5.to_csv("performanceTrainingdata_cv5_no.csv", index=False)
+# performance_results1.to_csv("performanceTrainingdata_2_95_5.csv", index=False)
 
 # best model
-print(gs_model.best_params_)
-print(gs_model.best_score_)
-clf = gs_model.best_estimator_
+print(gs_model1.best_params_)
+print(gs_model1.best_score_)
+clf1 = gs_model1.best_estimator_
+
+#%%
+
+# under construction
+#-------------------------------------------------------------------------
+
+# feature reduction based on feature importanse RF
+feature_reductionRF = SelectFromModel(clf1)
+feature_reductionRF.fit(cgMLST_train_reduced, labels_train)
+
+selected_features = cgMLST_train_reduced.columns[(feature_reductionRF.get_support())]
+len(selected_features)
+
+cgMLST_train_reducedRF = feature_reductionRF.transform(cgMLST_train_reduced) 
+
+# Removing features fron test set
+
+#--------------------------------------------------------------------------
+
+#%%
+
+# refiting model after feature reduction and finding best parameters 
+gs_model2 = gs.fit(cgMLST_train_reducedRF, labels_train)
+
+# mean performance results for the different parameters
+performance_results2 = pd.DataFrame(gs_model2.cv_results_)
+performance_results2 = performance_results2[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+                   'mean_test_macro_f1', 'rank_test_macro_f1',
+                   'mean_test_accurcacy', 'rank_test_accurcacy']]
+
+# saving performance result training data
+# performance_results2.to_csv("performanceTrainingdata_RF498.csv", index=False)
+
+# best model
+print(gs_model2.best_params_)
+print(gs_model2.best_score_)
+clf2 = gs_model2.best_estimator_
 
 #%% 
 
 # predicting 
-proba_predict = clf.predict_proba(cgMLST_test)
+proba_predict = clf2.predict_proba(cgMLST_test)
 labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 
