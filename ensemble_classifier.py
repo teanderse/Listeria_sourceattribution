@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
-from sklearn.feature_selection import SelectFromModel
+# from sklearn.feature_selection import SelectFromModel
 
 #%%
 
@@ -137,41 +137,35 @@ clf1 = gs_model1.best_estimator_
 # under construction
 #-------------------------------------------------------------------------
 
-# feature reduction based on feature importanse RF
-feature_importance = gs_model1.best_estimator_.feature_importances_ 
+# # feature reduction based on feature importanse RF
+# feature_importance = gs_model1.best_estimator_.feature_importances_ 
 
-selected_features = cgMLST_train_reduced.columns[(feature_reductionRF.get_support())]
-len(selected_features)
+# # Removing features from test set
 
-cgMLST_train_reducedRF = feature_reductionRF.transform(cgMLST_train_reduced) 
 
-# Removing features from test set
+# # refiting model after feature reduction and finding best parameters 
+# gs_model2 = gs.fit(cgMLST_train_reducedRF, labels_train)
+
+# # mean performance results for the different parameters
+# performance_results2 = pd.DataFrame(gs_model2.cv_results_)
+# performance_results2 = performance_results2[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+#                    'mean_test_macro_f1', 'rank_test_macro_f1',
+#                    'mean_test_accurcacy', 'rank_test_accurcacy']]
+
+# # saving performance result training data
+# # performance_results2.to_csv("performanceTrainingdata_RF498.csv", index=False)
+
+# # best model
+# print(gs_model2.best_params_)
+# print(gs_model2.best_score_)
+# clf2 = gs_model2.best_estimator_
 
 #--------------------------------------------------------------------------
-
-#%%
-
-# refiting model after feature reduction and finding best parameters 
-gs_model2 = gs.fit(cgMLST_train_reducedRF, labels_train)
-
-# mean performance results for the different parameters
-performance_results2 = pd.DataFrame(gs_model2.cv_results_)
-performance_results2 = performance_results2[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
-                   'mean_test_macro_f1', 'rank_test_macro_f1',
-                   'mean_test_accurcacy', 'rank_test_accurcacy']]
-
-# saving performance result training data
-# performance_results2.to_csv("performanceTrainingdata_RF498.csv", index=False)
-
-# best model
-print(gs_model2.best_params_)
-print(gs_model2.best_score_)
-clf2 = gs_model2.best_estimator_
 
 #%% 
 
 # predicting 
-proba_predict = clf2.predict_proba(cgMLST_test)
+proba_predict = clf1.predict_proba(cgMLST_test)
 labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 
