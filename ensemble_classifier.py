@@ -43,43 +43,66 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         random_state=3)
 
 #%% 
-# under construction
-#-------------------------------------------------------------------------
 
 # feature reduction
+def lowVar_reduction(x_train, percentVar_threshold=2, percentRatio_threshold=95/5):
+    """
+    
+    Function to calculate low variation within columns. Low variation is defind as columns with 1 unique value,
+    or columns with percent unique values belowe percentVar_threshold and 
+    with ratio between frequency of the two most common values above percentRatio_threshold.
 
-# removing no variance features
-unique_train = cgMLST_train.nunique()
-no_var = [i for i, v in enumerate(unique_train) if v == 1]
-removed_features_noVar = unique_train.index[no_var].tolist()
-cgMLST_train_reduced = cgMLST_train.drop(cgMLST_train.columns[no_var], axis=1)
+    Parameters
+    ----------
+    x_train : Dataframe
+        Training data for machine learning model.
+    percentVar_threshold : int, optional
+        Treshold for percent unique values per column. The default is 2.
+    percentRatio_threshold : float, optional
+        Treshold for ratio between the frequency of the two most common values per column. The default is 95/5.
 
-# finding low variance features by threshold for percent unique values
-percentVar_threshold = 2
-low_varPercent = [i for i,v in enumerate(unique_train) if (float(v)/cgMLST_train.shape[0]*100) < percentVar_threshold]
-removed_features_percent = unique_train.index[low_varPercent].tolist()
+    Returns
+    -------
+    removed_features : list
+        List of names for columns with calculated low variation.
 
-# finding low variance features by ratio between the frequency of the two most common values
-cgMLST_train_reduced_dummy = cgMLST_train_reduced.apply(lambda x: x.value_counts().values[0:2]).T
-cgMLST_train_reduced_dummy[2] = cgMLST_train_reduced_dummy.apply(lambda x: x[0]/x[1], axis=1)
-percentRatio_threshold = 95/5
-low_varRatio = [i for i,v in enumerate(cgMLST_train_reduced_dummy[2]) if (round(v, 2)) > percentRatio_threshold]
-removed_features_ratio = cgMLST_train_reduced_dummy.index[low_varRatio].tolist()
+    """
+    # removing no variation features
+    unique_train = x_train.nunique()
+    no_var = [i for i, v in enumerate(unique_train) if v == 1]
+    removed_features_noVar = unique_train.index[no_var].tolist()
+    x_train_reduced = x_train.drop(x_train.columns[no_var], axis=1)
+    
+    # finding low variation features by threshold for percent unique values
+    low_varPercent = [i for i,v in enumerate(unique_train) if (float(v)/x_train.shape[0]*100) < percentVar_threshold]
+    removed_features_percent = unique_train.index[low_varPercent].tolist()
+    
+    # finding low variation features by ratio between the frequency of the two most common values
+    x_train_reduced_dummy = x_train_reduced.apply(lambda x: x.value_counts().values[0:2]).T
+    x_train_reduced_dummy[2] = x_train_reduced_dummy.apply(lambda x: x[0]/x[1], axis=1)
+    low_varRatio = [i for i,v in enumerate(x_train_reduced_dummy[2]) if (round(v, 2)) > percentRatio_threshold]
+    removed_features_ratio = x_train_reduced_dummy.index[low_varRatio].tolist()
+    
+    # adding features with both low percente unique values and ratio between value frquencies to removed list
+    removed_features = list(set(removed_features_percent) & set(removed_features_ratio))
+    # adding features with 1 unique value to removed list
+    removed_features += removed_features_noVar
+    
+    return removed_features
 
-# removing features with both low percente unique values and ratio between value frquencies
-removed_features = list(set(removed_features_percent) & set(removed_features_ratio))
-cgMLST_train_reduced = cgMLST_train_reduced.drop(columns=removed_features)
+lowVar_features = lowVar_reduction(cgMLST_train)
 
-# Removing features fron test set 
+# Removing features with low variation from train and test set
+cgMLST_train_reduced = cgMLST_train.drop(columns=lowVar_features)
+cgMLST_test_reduced = cgMLST_test.drop(columns=lowVar_features)
 
-#-------------------------------------------------------------------------
 #%%
 
 # setup for random forest model
 model = RandomForestClassifier(random_state=2)
 
 # parameters
-param_grid   = [{'n_estimators': [300, 400, 500], 'class_weight':['balanced', None], 'criterion': ['gini']}]
+param_grid   = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'class_weight':['balanced', None], 'criterion': ['gini']}]
 
 # gridsearch for best parameters 5-fold cross validation
 gs = GridSearchCV(estimator=model, 
@@ -115,15 +138,14 @@ clf1 = gs_model1.best_estimator_
 #-------------------------------------------------------------------------
 
 # feature reduction based on feature importanse RF
-feature_reductionRF = SelectFromModel(clf1)
-feature_reductionRF.fit(cgMLST_train_reduced, labels_train)
+feature_importance = gs_model1.best_estimator_.feature_importances_ 
 
 selected_features = cgMLST_train_reduced.columns[(feature_reductionRF.get_support())]
 len(selected_features)
 
 cgMLST_train_reducedRF = feature_reductionRF.transform(cgMLST_train_reduced) 
 
-# Removing features fron test set
+# Removing features from test set
 
 #--------------------------------------------------------------------------
 
