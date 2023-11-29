@@ -5,7 +5,7 @@
 import pandas as pd
 import numpy as np 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
@@ -44,7 +44,7 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
-# feature reduction
+# feature reduction function
 def lowVar_reduction(x_train, percentVar_threshold=2, percentRatio_threshold=95/5):
     """
     
@@ -90,7 +90,10 @@ def lowVar_reduction(x_train, percentVar_threshold=2, percentRatio_threshold=95/
     
     return removed_features
 
-lowVar_features = lowVar_reduction(cgMLST_train)
+#%%
+
+# defining features with low variation
+lowVar_features = lowVar_reduction(cgMLST_train, 1, 50/50)
 
 # Removing features with low variation from train and test set
 cgMLST_train_reduced = cgMLST_train.drop(columns=lowVar_features)
@@ -99,13 +102,13 @@ cgMLST_test_reduced = cgMLST_test.drop(columns=lowVar_features)
 #%%
 
 # setup for random forest model
-model = RandomForestClassifier(random_state=2)
+RF_model = RandomForestClassifier(random_state=2)
 
 # parameters
 param_grid   = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'class_weight':['balanced', None], 'criterion': ['gini']}]
 
 # gridsearch for best parameters 5-fold cross validation
-gs = GridSearchCV(estimator=model, 
+gs = GridSearchCV(estimator=RF_model, 
                   param_grid=param_grid, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
                   cv=5,
@@ -116,16 +119,16 @@ gs = GridSearchCV(estimator=model,
 #%%
 
 # fiting model and finding best parameters 
-gs_model1 = gs.fit(cgMLST_train_reduced, labels_train)
+gs_model1 = gs.fit(cgMLST_train, labels_train)
 
 # mean performance results for the different parameters
-performance_results1 = pd.DataFrame(gs_model1.cv_results_)
-performance_results1 = performance_results1[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+performance_results_Trainingdata = pd.DataFrame(gs_model1.cv_results_)
+performance_results_Trainingdata = performance_results_Trainingdata[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
                    'mean_test_macro_f1', 'rank_test_macro_f1',
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-# performance_results1.to_csv("performanceTrainingdata_2_95_5.csv", index=False)
+# performance_results_Trainingdata.to_csv("performanceTrainingdata_no_RF.csv", index=False)
 
 # best model
 print(gs_model1.best_params_)
@@ -201,4 +204,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-# probability_df.to_csv("probability_test_no.csv", index=False)
+probability_df.to_csv("probability_test_no_RF.csv", index=False)
