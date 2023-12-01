@@ -47,9 +47,9 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 #%% 
 
 # parameter C
-param_range  = [0.01, 0.03, 0.05, 0.07, 0.09, 0.1, 1.0, 2.0, 3.0, 3.4, 3.5, 3.6, 4.0, 5.0]
+param_range  = [0.01, 0.03, 0.05, 0.07,  0.1, 1.0, 2.0, 3.0, 3.5, 4.0, 5.0]
 # scaling parameter gamma for rbf-kernel
-param_range2 = [0.0001, 0.001,0.005, 0.01, 0.015, 0.1, 1.0, 10.0, 100.0]   
+param_range2 = [0.0001, 0.001,0.005, 0.01, 0.015, 0.1, 1.0, 5.0]   
    
 param_grid   = [{'C': param_range, 'gamma': param_range2, 'kernel': ['rbf']}]
 
