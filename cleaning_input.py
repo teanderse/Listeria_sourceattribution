@@ -40,7 +40,7 @@ for col in cgMLST_cols:
                                             
 #%% 
 
-# removing columns with 10% or more missing values
+# removing columns and rows with 10% or more missing values
 
 # values before drop based on missing values
 before_col = cleaned_data.shape[1]

@@ -9,7 +9,9 @@ Created on Wed Nov 29 16:47:17 2023
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import make_pipeline
 from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
@@ -50,15 +52,19 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 param_range  = [0.01, 0.03, 0.05, 0.07,  0.1, 1.0, 2.0, 3.0, 3.5, 4.0, 5.0]
 # scaling parameter gamma for rbf-kernel
 param_range2 = [0.0001, 0.001,0.005, 0.01, 0.015, 0.1, 1.0, 5.0]   
-   
-param_grid   = [{'C': param_range, 'gamma': param_range2, 'kernel': ['rbf']}]
+
+# add svc__ for SVM_pipe   
+param_grid   = [{'svc__C': param_range, 'svc__gamma': param_range2, 'svc__kernel': ['rbf']}]
 
 
 # setup for support vector clasifier 
 SVM_model = SVC(random_state=2)
+# SVC with pipeline fro scaling
+SVM_pipe = make_pipeline(StandardScaler(),
+                         SVC(random_state=2))
 
 
-gs = GridSearchCV(estimator=SVM_model, 
+gs = GridSearchCV(estimator=SVM_pipe, 
                   param_grid=param_grid, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
                   cv=5,
@@ -72,8 +78,8 @@ gs = GridSearchCV(estimator=SVM_model,
 gs_model = gs.fit(cgMLST_train, labels_train)
 
 # mean performance results for the different parameters
-performance_results_Trainingdata = pd.DataFrame(gs_model.cv_results_)
-performance_results_Trainingdata = performance_results_Trainingdata[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+performance_results_Trainingdata2 = pd.DataFrame(gs_model.cv_results_)
+performance_results_Trainingdata2 = performance_results_Trainingdata2[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
                    'mean_test_macro_f1', 'rank_test_macro_f1',
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 

@@ -6,10 +6,12 @@ import pandas as pd
 import numpy as np 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from scipy.stats import entropy
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
+
 # from sklearn.feature_selection import SelectFromModel
 
 #%%
@@ -44,60 +46,22 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
-# feature reduction function
-def lowVar_reduction(x_train, percentVar_threshold=2, percentRatio_threshold=95/5):
-    """
-    
-    Function to calculate low variation within columns. Low variation is defind as columns with 1 unique value,
-    or columns with percent unique values belowe percentVar_threshold and 
-    with ratio between frequency of the two most common values above percentRatio_threshold.
+# computing shannon entropy for columns in train
+cgMLST_train_count = cgMLST_train.apply(lambda x: x.value_counts())
+cgMLST_train_count.fillna(0, inplace=True)
+cgMLST_train_abundance = cgMLST_train_count.apply(lambda x: x/(cgMLST_train_count.shape[0]))
+s_entropy = cgMLST_train_abundance.apply(lambda x: entropy(x))
 
-    Parameters
-    ----------
-    x_train : Dataframe
-        Training data for machine learning model.
-    percentVar_threshold : int, optional
-        Treshold for percent unique values per column. The default is 2.
-    percentRatio_threshold : float, optional
-        Treshold for ratio between the frequency of the two most common values per column. The default is 95/5.
-
-    Returns
-    -------
-    removed_features : list
-        List of names for columns with calculated low variation.
-
-    """
-    # removing no variation features
-    unique_train = x_train.nunique()
-    no_var = [i for i, v in enumerate(unique_train) if v == 1]
-    removed_features_noVar = unique_train.index[no_var].tolist()
-    x_train_reduced = x_train.drop(x_train.columns[no_var], axis=1)
-    
-    # finding low variation features by threshold for percent unique values
-    low_varPercent = [i for i,v in enumerate(unique_train) if (float(v)/x_train.shape[0]*100) < percentVar_threshold]
-    removed_features_percent = unique_train.index[low_varPercent].tolist()
-    
-    # finding low variation features by ratio between the frequency of the two most common values
-    x_train_reduced_dummy = x_train_reduced.apply(lambda x: x.value_counts().values[0:2]).T
-    x_train_reduced_dummy[2] = x_train_reduced_dummy.apply(lambda x: x[0]/x[1], axis=1)
-    low_varRatio = [i for i,v in enumerate(x_train_reduced_dummy[2]) if (round(v, 2)) > percentRatio_threshold]
-    removed_features_ratio = x_train_reduced_dummy.index[low_varRatio].tolist()
-    
-    # adding features with both low percente unique values and ratio between value frquencies to removed list
-    removed_features = list(set(removed_features_percent) & set(removed_features_ratio))
-    # adding features with 1 unique value to removed list
-    removed_features += removed_features_noVar
-    
-    return removed_features
+# defining features with low entropy
+entropy_threshold = 0
+low_entropy = [i for i,v in enumerate(s_entropy) if v == entropy_threshold]
+lowEntropy_features = s_entropy.index[low_entropy].tolist()
 
 #%%
 
-# defining features with low variation
-lowVar_features = lowVar_reduction(cgMLST_train, 1, 50/50)
-
-# Removing features with low variation from train and test set
-cgMLST_train_reduced = cgMLST_train.drop(columns=lowVar_features)
-cgMLST_test_reduced = cgMLST_test.drop(columns=lowVar_features)
+# Removing features with low diversity from train and test set
+cgMLST_train_reduced = cgMLST_train.drop(columns=lowEntropy_features)
+cgMLST_test_reduced = cgMLST_test.drop(columns=lowEntropy_features)
 
 #%%
 
