@@ -60,8 +60,8 @@ lowEntropy_features = s_entropy.index[low_entropy].tolist()
 #%%
 
 # Removing features with low diversity from train and test set
-cgMLST_train_reduced = cgMLST_train.drop(columns=lowEntropy_features)
-cgMLST_test_reduced = cgMLST_test.drop(columns=lowEntropy_features)
+cgMLST_train_divReduced = cgMLST_train.drop(columns=lowEntropy_features)
+cgMLST_test_divReduced = cgMLST_test.drop(columns=lowEntropy_features)
 
 #%%
 
@@ -69,11 +69,11 @@ cgMLST_test_reduced = cgMLST_test.drop(columns=lowEntropy_features)
 RF_model = RandomForestClassifier(random_state=2)
 
 # parameters
-param_grid   = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'class_weight':['balanced', None], 'criterion': ['gini']}]
+param_grid_RF = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'class_weight':['balanced', None], 'criterion': ['gini']}]
 
 # gridsearch for best parameters 5-fold cross validation
-gs = GridSearchCV(estimator=RF_model, 
-                  param_grid=param_grid, 
+gs_RF = GridSearchCV(estimator=RF_model, 
+                  param_grid=param_grid_RF, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
                   cv=5,
                   refit='weighted_f1',
@@ -83,21 +83,21 @@ gs = GridSearchCV(estimator=RF_model,
 #%%
 
 # fiting model and finding best parameters 
-gs_model1 = gs.fit(cgMLST_train, labels_train)
+gs_model_RF = gs_RF.fit(cgMLST_train, labels_train)
 
 # mean performance results for the different parameters
-performance_results_Trainingdata = pd.DataFrame(gs_model1.cv_results_)
-performance_results_Trainingdata = performance_results_Trainingdata[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+performanceResults_trainingdata = pd.DataFrame(gs_model_RF.cv_results_)
+performanceResults_trainingdata = performanceResults_trainingdata[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
                    'mean_test_macro_f1', 'rank_test_macro_f1',
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-# performance_results_Trainingdata.to_csv("performanceTrainingdata_no_RF.csv", index=False)
+# performanceResults_trainingdata.to_csv("performanceTrainingdata_no_RF.csv", index=False)
 
 # best model
-print(gs_model1.best_params_)
-print(gs_model1.best_score_)
-clf1 = gs_model1.best_estimator_
+print(gs_model_RF.best_params_)
+print(gs_model_RF.best_score_)
+clf_RF = gs_model_RF.best_estimator_
 
 #%%
 
@@ -105,46 +105,49 @@ clf1 = gs_model1.best_estimator_
 #-------------------------------------------------------------------------
 
 # # feature reduction based on feature importanse RF
-# feature_importance = gs_model1.best_estimator_.feature_importances_ 
+# feature_importance = gs_model_RF.best_estimator_.feature_importances_ 
+# # selecting features based on importance
+# important_features
 
-# # Removing features from test set
-
+# # Removing features from test train set
+# cgMLST_train_reduced = cgMLST_train_divReduced.columns[important_features]
+# cgMLST_test_reduced = cgMLST_test_divReduced.columns[important_features]
 
 # # refiting model after feature reduction and finding best parameters 
-# gs_model2 = gs.fit(cgMLST_train_reducedRF, labels_train)
+# gs_model_RF2 = gs_RF.fit(cgMLST_train_reduced, labels_train)
 
 # # mean performance results for the different parameters
-# performance_results2 = pd.DataFrame(gs_model2.cv_results_)
-# performance_results2 = performance_results2[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+# performanceResults_trainingdata2 = pd.DataFrame(gs_model_RF2.cv_results_)
+# performanceResults_trainingdata2 = performanceResults_trainingdata2[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
 #                    'mean_test_macro_f1', 'rank_test_macro_f1',
 #                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # # saving performance result training data
-# # performance_results2.to_csv("performanceTrainingdata_RF498.csv", index=False)
+# # performanceResults_trainingdata2.to_csv("performanceTrainingdata_RF498.csv", index=False)
 
 # # best model
-# print(gs_model2.best_params_)
-# print(gs_model2.best_score_)
-# clf2 = gs_model2.best_estimator_
+# print(gs_model_RF2.best_params_)
+# print(gs_model_RF2.best_score_)
+# clf_RF2 = gs_model_RF2.best_estimator_
 
 #--------------------------------------------------------------------------
 
 #%% 
 
 # predicting 
-proba_predict = clf1.predict_proba(cgMLST_test)
+proba_predict = clf_RF.predict_proba(cgMLST_test)
 labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 
 #%% 
 
 # performance metrics test
-performance_report_test = classification_report(
+performanceReport_testdata = classification_report(
             labels_test,
             labelno_predict,
             target_names=label_dict.values())
 
-print(performance_report_test)
+print(performanceReport_testdata)
 
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labels_test,
@@ -157,11 +160,11 @@ conf_matrix.ax_.set_title("Conf. matrix")
 
 # dataframe for the probabilityes predicted
 source_true=[label_dict[x] for x in labels_test]
-true_labels = [list(source_true)]
+labels_true = [list(source_true)]
 predictions = [list(source_predict)]
 proba_predict = list(proba_predict.T)
 predictions += [list(x) for x in proba_predict]
-df_input = true_labels + predictions  
+df_input = labels_true + predictions  
 column_headers = ["true source","prediction"]
 column_headers += ["probability_{}".format(label_dict[x])for x in range(len(label_dict.keys()))]
 

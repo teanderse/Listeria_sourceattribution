@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 29 16:47:17 2023
 
-@author: tessa
-"""
 
 # imports
 import pandas as pd
@@ -48,24 +44,23 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
-# parameter C
-param_range  = [0.01, 0.03, 0.05, 0.07,  0.1, 1.0, 2.0, 3.0, 3.5, 4.0, 5.0]
-# scaling parameter gamma for rbf-kernel
-param_range2 = [0.0001, 0.001,0.005, 0.01, 0.015, 0.1, 1.0, 5.0]   
-
-# add svc__ for SVM_pipe   
-param_grid   = [{'svc__C': param_range, 'svc__gamma': param_range2, 'svc__kernel': ['rbf']}]
-
-
 # setup for support vector clasifier 
 SVM_model = SVC(random_state=2)
 # SVC with pipeline fro scaling
 SVM_pipe = make_pipeline(StandardScaler(),
                          SVC(random_state=2))
 
+# parameter range for C
+param_rangeC  = [0.01, 0.03, 0.05, 0.07,  0.1, 1.0, 2.0, 3.0, 3.5, 4.0, 5.0]
+# parameter range for gamma for scaling of the rbf-kernel
+param_rangeG = [0.0001, 0.001,0.005, 0.01, 0.015, 0.1, 1.0, 5.0]   
 
-gs = GridSearchCV(estimator=SVM_pipe, 
-                  param_grid=param_grid, 
+# parameters
+# add svc__ for SVM_pipe   
+param_grid_SVM = [{'svc__C': param_rangeC, 'svc__gamma': param_rangeG, 'svc__kernel': ['rbf']}]
+
+gs_SVM = GridSearchCV(estimator=SVM_pipe, 
+                  param_grid=param_grid_SVM, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
                   cv=5,
                   refit='weighted_f1',
@@ -75,37 +70,37 @@ gs = GridSearchCV(estimator=SVM_pipe,
 #%%
 
 # fiting model and finding best parameters 
-gs_model = gs.fit(cgMLST_train, labels_train)
+gs_model_SVM = gs_SVM.fit(cgMLST_train, labels_train)
 
 # mean performance results for the different parameters
-performance_results_Trainingdata2 = pd.DataFrame(gs_model.cv_results_)
-performance_results_Trainingdata2 = performance_results_Trainingdata2[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
+performanceResults_trainingdata = pd.DataFrame(gs_model_SVM.cv_results_)
+performanceResults_trainingdata = performanceResults_trainingdata[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
                    'mean_test_macro_f1', 'rank_test_macro_f1',
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-#performance_results_Trainingdata.to_csv("performanceTrainingdata_no_svm.csv", index=False)
+#performanceResults_trainingdata.to_csv("performanceTrainingdata_no_svm.csv", index=False)
 
 # best model
-print(gs_model.best_params_)
-print(gs_model.best_score_)
-clf = gs_model.best_estimator_
+print(gs_model_SVM.best_params_)
+print(gs_model_SVM.best_score_)
+clf_SVM = gs_model_SVM.best_estimator_
 
 #%% 
 
 # predicting 
-labelno_predict = clf.predict(cgMLST_test)
+labelno_predict = clf_SVM.predict(cgMLST_test)
 source_predict=[label_dict[x] for x in labelno_predict]
 
 #%% 
 
 # performance metrics test
-performance_report_test = classification_report(
+performanceReport_testdata = classification_report(
             labels_test,
             labelno_predict,
             target_names=label_dict.values())
 
-print(performance_report_test)
+print(performanceReport_testdata)
 
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labels_test,
@@ -118,9 +113,9 @@ conf_matrix.ax_.set_title("Conf. matrix")
 
 # dataframe for the probabilityes predicted
 source_true=[label_dict[x] for x in labels_test]
-true_labels = [list(source_true)]
+labels_true = [list(source_true)]
 predictions = [list(source_predict)]
-df_input = true_labels + predictions  
+df_input = labels_true + predictions  
 column_headers = ["true source","prediction"]
 column_headers += ["probability_{}".format(label_dict[x])for x in range(len(label_dict.keys()))]
 
