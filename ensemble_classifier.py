@@ -104,7 +104,7 @@ clf_RF = gs_model_RF.best_estimator_
 # under construction
 #-------------------------------------------------------------------------
 
-# # feature reduction based on feature importanse RF
+# # feature selection based on feature importanse RF
 # feature_importance = gs_model_RF.best_estimator_.feature_importances_ 
 # # selecting features based on importance
 # important_features
@@ -113,7 +113,7 @@ clf_RF = gs_model_RF.best_estimator_
 # cgMLST_train_reduced = cgMLST_train_divReduced.columns[important_features]
 # cgMLST_test_reduced = cgMLST_test_divReduced.columns[important_features]
 
-# # refiting model after feature reduction and finding best parameters 
+# # refiting model after feature selection and finding best parameters 
 # gs_model_RF2 = gs_RF.fit(cgMLST_train_reduced, labels_train)
 
 # # mean performance results for the different parameters
