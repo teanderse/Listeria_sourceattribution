@@ -52,6 +52,10 @@ cgMLST_train_count.fillna(0, inplace=True)
 cgMLST_train_abundance = cgMLST_train_count.apply(lambda x: x/(cgMLST_train_count.shape[0]))
 s_entropy = cgMLST_train_abundance.apply(lambda x: entropy(x))
 
+
+# saving shannon entropy for train 
+#s_entropy.to_csv("shannonEntropy_train.csv", index=True)
+
 # defining features with low entropy
 entropy_threshold = 0
 low_entropy = [i for i,v in enumerate(s_entropy) if v == entropy_threshold]
