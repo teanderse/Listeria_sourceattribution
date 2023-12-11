@@ -7,6 +7,9 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from scipy.stats import entropy
+from sklearn.feature_selection import mutual_info_classif
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import SelectPercentile
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
@@ -69,6 +72,30 @@ cgMLST_test_divReduced = cgMLST_test.drop(columns=lowEntropy_features)
 
 #%%
 
+# computing mutual information for columns in train with classes in labels
+mutual_info = mutual_info_classif(cgMLST_train, labels_train, random_state=3)
+mutual_info = pd.Series(mutual_info)
+mutual_info.index = cgMLST_train.columns
+mutual_info.sort_values(ascending=False).head()
+
+# saving mutuak information calculation for features in train
+# mutual_info.to_csv("mutualInfo_trainingdata.csv", index=True)
+
+#%%
+np.random.seed(3)
+# feature selection based on mutual information
+# k-best features
+#kBest_threshold = 694
+#kBest = SelectKBest(mutual_info_classif, k=kBest_threshold) 
+# percentile best features
+percentile_threshold = 20
+pBest= SelectPercentile(mutual_info_classif, percentile=percentile_threshold)
+
+#cgMLST_train_kBestReduced = kBest.fit_transform(cgMLST_train, labels_train)
+cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
+
+#%% 
+
 # setup for random forest model
 RF_model = RandomForestClassifier(random_state=2)
 
@@ -87,7 +114,7 @@ gs_RF = GridSearchCV(estimator=RF_model,
 #%%
 
 # fiting model and finding best parameters 
-gs_model_RF = gs_RF.fit(cgMLST_train, labels_train)
+gs_model_RF = gs_RF.fit(cgMLST_train_pBestReduced, labels_train)
 
 # mean performance results for the different parameters
 performanceResults_trainingdata = pd.DataFrame(gs_model_RF.cv_results_)
