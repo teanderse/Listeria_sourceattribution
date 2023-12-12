@@ -6,9 +6,7 @@ import pandas as pd
 import numpy as np 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from scipy.stats import entropy
 from sklearn.feature_selection import mutual_info_classif
-from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import SelectPercentile
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
@@ -49,29 +47,6 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
-# computing shannon entropy for columns in train
-cgMLST_train_count = cgMLST_train.apply(lambda x: x.value_counts())
-cgMLST_train_count.fillna(0, inplace=True)
-cgMLST_train_abundance = cgMLST_train_count.apply(lambda x: x/(cgMLST_train_count.shape[0]))
-s_entropy = cgMLST_train_abundance.apply(lambda x: entropy(x))
-
-
-# saving shannon entropy for train 
-#s_entropy.to_csv("shannonEntropy_train.csv", index=True)
-
-# defining features with low entropy
-entropy_threshold = 0
-low_entropy = [i for i,v in enumerate(s_entropy) if v == entropy_threshold]
-lowEntropy_features = s_entropy.index[low_entropy].tolist()
-
-#%%
-
-# Removing features with low diversity from train and test set
-cgMLST_train_divReduced = cgMLST_train.drop(columns=lowEntropy_features)
-cgMLST_test_divReduced = cgMLST_test.drop(columns=lowEntropy_features)
-
-#%%
-
 # computing mutual information for columns in train with classes in labels
 mutual_info = mutual_info_classif(cgMLST_train, labels_train, random_state=3)
 mutual_info = pd.Series(mutual_info)
@@ -84,14 +59,11 @@ mutual_info.sort_values(ascending=False).head()
 #%%
 np.random.seed(3)
 # feature selection based on mutual information
-# k-best features
-#kBest_threshold = 694
-#kBest = SelectKBest(mutual_info_classif, k=kBest_threshold) 
 # percentile best features
 percentile_threshold = 20
 pBest= SelectPercentile(mutual_info_classif, percentile=percentile_threshold)
 
-#cgMLST_train_kBestReduced = kBest.fit_transform(cgMLST_train, labels_train)
+# reducing train to p-best features
 cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 
 #%% 
@@ -129,39 +101,6 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
 print(gs_model_RF.best_params_)
 print(gs_model_RF.best_score_)
 clf_RF = gs_model_RF.best_estimator_
-
-#%%
-
-# under construction
-#-------------------------------------------------------------------------
-
-# # feature selection based on feature importanse RF
-# feature_importance = gs_model_RF.best_estimator_.feature_importances_ 
-# # selecting features based on importance
-# important_features
-
-# # Removing features from test train set
-# cgMLST_train_reduced = cgMLST_train_divReduced.columns[important_features]
-# cgMLST_test_reduced = cgMLST_test_divReduced.columns[important_features]
-
-# # refiting model after feature selection and finding best parameters 
-# gs_model_RF2 = gs_RF.fit(cgMLST_train_reduced, labels_train)
-
-# # mean performance results for the different parameters
-# performanceResults_trainingdata2 = pd.DataFrame(gs_model_RF2.cv_results_)
-# performanceResults_trainingdata2 = performanceResults_trainingdata2[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
-#                    'mean_test_macro_f1', 'rank_test_macro_f1',
-#                    'mean_test_accurcacy', 'rank_test_accurcacy']]
-
-# # saving performance result training data
-# # performanceResults_trainingdata2.to_csv("performanceTrainingdata_RF498.csv", index=False)
-
-# # best model
-# print(gs_model_RF2.best_params_)
-# print(gs_model_RF2.best_score_)
-# clf_RF2 = gs_model_RF2.best_estimator_
-
-#--------------------------------------------------------------------------
 
 #%% 
 
