@@ -60,7 +60,7 @@ mutual_info.sort_values(ascending=False).head()
 np.random.seed(3)
 # feature selection based on mutual information
 # percentile best features
-percentile_threshold = 20
+percentile_threshold = 50
 pBest= SelectPercentile(mutual_info_classif, percentile=percentile_threshold)
 
 # reducing train to p-best features
@@ -82,6 +82,7 @@ param_rangeG = [0.0001, 0.001,0.005, 0.01, 0.015, 0.1, 1.0, 5.0]
 # add svc__ for SVM_pipe   
 param_grid_SVM = [{'svc__C': param_rangeC, 'svc__gamma': param_rangeG, 'svc__kernel': ['rbf']}]
 
+# Estimator: SVM_pipe = scaling, SVM_model = no scaling
 gs_SVM = GridSearchCV(estimator=SVM_pipe, 
                   param_grid=param_grid_SVM, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
@@ -93,7 +94,7 @@ gs_SVM = GridSearchCV(estimator=SVM_pipe,
 #%%
 
 # fiting model and finding best parameters 
-gs_model_SVM = gs_SVM.fit(cgMLST_train, labels_train)
+gs_model_SVM = gs_SVM.fit(cgMLST_train_pBestReduced, labels_train)
 
 # mean performance results for the different parameters
 performanceResults_trainingdata = pd.DataFrame(gs_model_SVM.cv_results_)
