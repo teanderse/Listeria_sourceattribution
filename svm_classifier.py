@@ -3,8 +3,11 @@
 
 # imports
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.feature_selection import mutual_info_classif
+from sklearn.feature_selection import SelectPercentile
 from sklearn.pipeline import make_pipeline
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
@@ -44,6 +47,26 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
+# computing mutual information for columns in train with classes in labels
+mutual_info = mutual_info_classif(cgMLST_train, labels_train, random_state=3)
+mutual_info = pd.Series(mutual_info)
+mutual_info.index = cgMLST_train.columns
+mutual_info.sort_values(ascending=False).head()
+
+# saving mutuak information calculation for features in train
+# mutual_info.to_csv("mutualInfo_trainingdata.csv", index=True)
+
+#%%
+np.random.seed(3)
+# feature selection based on mutual information
+# percentile best features
+percentile_threshold = 20
+pBest= SelectPercentile(mutual_info_classif, percentile=percentile_threshold)
+
+# reducing train to p-best features
+cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
+
+#%%
 # setup for support vector clasifier 
 SVM_model = SVC(random_state=2)
 # SVC with pipeline fro scaling
