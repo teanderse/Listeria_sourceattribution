@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.feature_selection import SelectPercentile
 from sklearn.ensemble import RandomForestClassifier
@@ -44,6 +45,12 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         test_size=0.30,
         stratify=labels,
         random_state=3)
+
+#%% 
+
+# scaling before feature selection
+scaler = StandardScaler()
+cgMLST_train_scaled = scaler.fit_transform(cgMLST_train)
 
 #%% 
 

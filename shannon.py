@@ -86,8 +86,8 @@ s_entropy_meat = cgMLST_meat_abundance.apply(lambda x: entropy(x))
 
 
 # saving shannon entropys 
-s_entropy_slugs.to_csv("shannonEntropy_slugs.csv", index=True)
-s_entropy_dairyfarm.to_csv("shannonEntropy_dairyfarm.csv", index=True)
-s_entropy_environment.to_csv("shannonEntropy_environment.csv", index=True)
-s_entropy_salmon.to_csv("shannonEntropy_salmon.csv", index=True)
-s_entropy_meat.to_csv("shannonEntropy_meat.csv", index=True)
+#s_entropy_slugs.to_csv("shannonEntropy_slugs.csv", index=True)
+#s_entropy_dairyfarm.to_csv("shannonEntropy_dairyfarm.csv", index=True)
+#s_entropy_environment.to_csv("shannonEntropy_environment.csv", index=True)
+#s_entropy_salmon.to_csv("shannonEntropy_salmon.csv", index=True)
+#s_entropy_meat.to_csv("shannonEntropy_meat.csv", index=True)
