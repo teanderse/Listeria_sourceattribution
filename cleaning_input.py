@@ -58,5 +58,5 @@ print("Dropped {} rows with over 10% missing values.".format(before_row - cleane
 cleaned_data.fillna(-1, inplace=True)
 
 # saving cleaned data
-cleaned_data.to_csv("cleaned_data_forML.csv", index=False)
+# cleaned_data.to_csv("cleaned_data_forML.csv", index=False)
 

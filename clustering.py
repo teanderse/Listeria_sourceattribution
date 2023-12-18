@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+# imports
 import pandas as pd
 import numpy as np 
 from kmodes.kmodes import KModes
@@ -39,5 +40,5 @@ column_headers = ["Source","Cluster"]
 cluster_df = pd.DataFrame(dict(zip(column_headers, df_input)))
 
 # saving performance result test data
-cluster_df.to_csv("cluster_df.csv", index=False)
+# cluster_df.to_csv("cluster_df.csv", index=False)
 

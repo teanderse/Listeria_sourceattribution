@@ -6,15 +6,12 @@ import pandas as pd
 import numpy as np 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.feature_selection import SelectPercentile
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
-
-# from sklearn.feature_selection import SelectFromModel
 
 #%%
 
@@ -46,28 +43,11 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         stratify=labels,
         random_state=3)
 
-#%% 
-
-# scaling before feature selection
-scaler = StandardScaler()
-cgMLST_train_scaled = scaler.fit_transform(cgMLST_train)
-
-#%% 
-
-# computing mutual information for columns in train with classes in labels
-mutual_info = mutual_info_classif(cgMLST_train, labels_train, random_state=3)
-mutual_info = pd.Series(mutual_info)
-mutual_info.index = cgMLST_train.columns
-mutual_info.sort_values(ascending=False).head()
-
-# saving mutuak information calculation for features in train
-# mutual_info.to_csv("mutualInfo_trainingdata.csv", index=True)
-
 #%%
 np.random.seed(3)
 # feature selection based on mutual information
 # percentile best features
-percentile_threshold = 20
+percentile_threshold = 10
 pBest= SelectPercentile(mutual_info_classif, percentile=percentile_threshold)
 
 # reducing train to p-best features
@@ -148,4 +128,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-probability_df.to_csv("probability_test_no_RF.csv", index=False)
+# probability_df.to_csv("probability_test_no_RF.csv", index=False)

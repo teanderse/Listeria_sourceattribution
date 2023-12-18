@@ -45,18 +45,8 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         stratify=labels,
         random_state=3)
 
-#%% 
-
-# computing mutual information for columns in train with classes in labels
-mutual_info = mutual_info_classif(cgMLST_train, labels_train, random_state=3)
-mutual_info = pd.Series(mutual_info)
-mutual_info.index = cgMLST_train.columns
-mutual_info.sort_values(ascending=False).head()
-
-# saving mutuak information calculation for features in train
-# mutual_info.to_csv("mutualInfo_trainingdata.csv", index=True)
-
 #%%
+
 np.random.seed(3)
 # feature selection based on mutual information
 # percentile best features
@@ -103,7 +93,7 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-#performanceResults_trainingdata.to_csv("performanceTrainingdata_no_svm.csv", index=False)
+# performanceResults_trainingdata.to_csv("performanceTrainingdata_no_svm.csv", index=False)
 
 # best model
 print(gs_model_SVM.best_params_)
@@ -146,4 +136,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-probability_df.to_csv("probability_test_no_svm.csv", index=False)
+# probability_df.to_csv("probability_test_no_svm.csv", index=False)
