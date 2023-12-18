@@ -13,13 +13,13 @@ from sklearn.model_selection import train_test_split
 #%%
 # Testing effects of mutual information on controled test dataframe
 # column with same values as classes in y
-col1 = [1, 2, 3, 4, 5]*600
+col1 = [1, 2, 3, 4, 5]*200
 # column with one value fore each class in y, but with som values being large
-col2 = [5, 50, 7, 400, 700]*600
+col2 = [5, 50, 7, 700, 400]*200
 # column with only one value
-col3 = [1, 1, 1, 1, 1]*600
+col3 = [1, 1, 1, 1, 1]*200
 # column y holding classes
-coly = [1, 2, 3, 4, 5]*600
+coly = [1, 2, 3, 4, 5]*200
 
 # making datafram of columns
 test_df = pd.DataFrame({'col1': col1,'col2': col2,'col3': col3,'coly': coly})
@@ -115,6 +115,7 @@ mutualInformation_cgMLST = raw_cgMLST.merge(scaled_cgMLST,left_index=True,right_
 mutualInformation_cgMLST["divergens"] = mutualInformation_cgMLST["MI_raw"]-mutualInformation_cgMLST["MI_scaled"]
 
 print("Max:",mutualInformation_cgMLST["divergens"].max(), "   Min:",mutualInformation_cgMLST["divergens"].min())
+# Max: 0.002218934911242698    Min: -0.002218934911242476
 
 # saving mutual information calculation for features in train witout scale
 # raw_cgMLST.to_csv("mutualInfo_trainingdata.csv", index=True)
