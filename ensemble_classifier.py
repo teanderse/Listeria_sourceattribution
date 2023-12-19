@@ -47,7 +47,7 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 np.random.seed(3)
 # feature selection based on mutual information
 # percentile best features
-percentile_threshold = 10
+percentile_threshold = 20
 pBest= SelectPercentile(mutual_info_classif, percentile=percentile_threshold)
 
 # reducing train to p-best features
@@ -91,8 +91,11 @@ clf_RF = gs_model_RF.best_estimator_
 
 #%% 
 
+# feature reduction test set
+cgMLST_test_pBestReduced = pBest.transform(cgMLST_test)
+
 # predicting 
-proba_predict = clf_RF.predict_proba(cgMLST_test)
+proba_predict = clf_RF.predict_proba(cgMLST_test_pBestReduced)
 labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 

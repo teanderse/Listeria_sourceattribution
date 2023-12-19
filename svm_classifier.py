@@ -50,7 +50,7 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 np.random.seed(3)
 # feature selection based on mutual information
 # percentile best features
-percentile_threshold = 50
+percentile_threshold = 40
 pBest= SelectPercentile(mutual_info_classif, percentile=percentile_threshold)
 
 # reducing train to p-best features
@@ -102,8 +102,11 @@ clf_SVM = gs_model_SVM.best_estimator_
 
 #%% 
 
+# feature reduction test set
+cgMLST_test_pBestReduced = pBest.transform(cgMLST_test)
+
 # predicting 
-labelno_predict = clf_SVM.predict(cgMLST_test)
+labelno_predict = clf_SVM.predict(cgMLST_test_pBestReduced)
 source_predict=[label_dict[x] for x in labelno_predict]
 
 #%% 
