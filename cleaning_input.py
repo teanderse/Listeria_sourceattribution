@@ -48,7 +48,7 @@ before_row = cleaned_data.shape[0]
 
 # removing columns
 cleaned_data.dropna(thresh=(round(before_row*0.9)), axis=1, inplace=True)
-print("Dropped {} rows with over 10% missing values.".format(before_col - cleaned_data.shape[1]))
+print("Dropped {} columns with over 10% missing values.".format(before_col - cleaned_data.shape[1]))
 
 # removing rows
 cleaned_data.dropna(thresh=(round(before_col*0.9)), axis=0, inplace=True)
