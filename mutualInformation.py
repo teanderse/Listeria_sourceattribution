@@ -40,25 +40,25 @@ x_encoded = xencoder.fit_transform(x)
 #%% 
 
 # computing mutual information for columns in x with classes in y
-mutualI_test_raw = mutual_info_classif(x, y, random_state=3)
+mutualI_test_raw = mutual_info_classif(x, y, random_state=3, n_neighbors=1)
 mutualI_test_raw = pd.DataFrame({'MI_raw':mutualI_test_raw})
 mutualI_test_raw.index = x.columns
 raw = mutualI_test_raw.sort_values(by="MI_raw", ascending=False)
 
 # computing mutual information for columns in scaled x with classes in y
-mutualI_test_scaled = mutual_info_classif(x_scaled, y, random_state=3)
+mutualI_test_scaled = mutual_info_classif(x_scaled, y, random_state=3, n_neighbors=1)
 mutualI_test_scaled = pd.DataFrame({'MI_scaled':mutualI_test_scaled})
 mutualI_test_scaled.index = x.columns
 scaled = mutualI_test_scaled.sort_values(by="MI_scaled", ascending=False)
 
 # computing mutual information for columns in label encoded x with classes in y
-mutualI_test_encoded = mutual_info_classif(x_encoded, y, random_state=3)
+mutualI_test_encoded = mutual_info_classif(x_encoded, y, random_state=3, n_neighbors=1)
 mutualI_test_encoded = pd.DataFrame({'MI_encoded':mutualI_test_encoded})
 mutualI_test_encoded.index = x.columns
 encoded = mutualI_test_encoded.sort_values(by="MI_encoded", ascending=False)
 
-mutualInformation_test = raw.merge(scaled,left_index=True,right_index=True)
-mutualInformation_test = mutualInformation_test.merge(encoded,left_index=True,right_index=True)
+mutualInformation_test3 = raw.merge(scaled,left_index=True,right_index=True)
+mutualInformation_test3 = mutualInformation_test3.merge(encoded,left_index=True,right_index=True)
 
  
 #%%
@@ -94,7 +94,7 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 #%% 
 
 # computing mutual information for columns in cgMLST_train
-mutualI_raw = mutual_info_classif(cgMLST_train, labels_train, random_state=3)
+mutualI_raw = mutual_info_classif(cgMLST_train, labels_train, random_state=3, n_neighbors=1)
 mutualI_raw = pd.DataFrame({'MI_raw':mutualI_raw})
 mutualI_raw.index = cgMLST_train.columns
 raw_cgMLST = mutualI_raw.sort_values(by="MI_raw", ascending=False)
@@ -104,7 +104,7 @@ raw_cgMLST.head()
 scaler = StandardScaler()
 cgMLST_train_scaled = scaler.fit_transform(cgMLST_train)
 # computing mutual information for columns in scaled cgMLST_train
-mutualI_scaled = mutual_info_classif(cgMLST_train_scaled, labels_train, random_state=3)
+mutualI_scaled = mutual_info_classif(cgMLST_train_scaled, labels_train, random_state=3, n_neighbors=1)
 mutualI_scaled = pd.DataFrame({'MI_scaled':mutualI_scaled})
 mutualI_scaled.index = cgMLST_train.columns
 scaled_cgMLST = mutualI_scaled.sort_values(by="MI_scaled", ascending=False)
