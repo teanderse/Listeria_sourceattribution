@@ -40,31 +40,31 @@ x_encoded = xencoder.fit_transform(x)
 #%% 
 
 # computing mutual information for columns in x with classes in y
-mutualI_test_raw = mutual_info_classif(x, y, random_state=3, n_neighbors=1)
+mutualI_test_raw = mutual_info_classif(x, y, random_state=3, discrete_features=True)
 mutualI_test_raw = pd.DataFrame({'MI_raw':mutualI_test_raw})
 mutualI_test_raw.index = x.columns
 raw = mutualI_test_raw.sort_values(by="MI_raw", ascending=False)
 
 # computing mutual information for columns in scaled x with classes in y
-mutualI_test_scaled = mutual_info_classif(x_scaled, y, random_state=3, n_neighbors=1)
+mutualI_test_scaled = mutual_info_classif(x_scaled, y, random_state=3)
 mutualI_test_scaled = pd.DataFrame({'MI_scaled':mutualI_test_scaled})
 mutualI_test_scaled.index = x.columns
 scaled = mutualI_test_scaled.sort_values(by="MI_scaled", ascending=False)
 
 # computing mutual information for columns in label encoded x with classes in y
-mutualI_test_encoded = mutual_info_classif(x_encoded, y, random_state=3, n_neighbors=1)
+mutualI_test_encoded = mutual_info_classif(x_encoded, y, random_state=3, discrete_features=True)
 mutualI_test_encoded = pd.DataFrame({'MI_encoded':mutualI_test_encoded})
 mutualI_test_encoded.index = x.columns
 encoded = mutualI_test_encoded.sort_values(by="MI_encoded", ascending=False)
 
-mutualInformation_test3 = raw.merge(scaled,left_index=True,right_index=True)
-mutualInformation_test3 = mutualInformation_test3.merge(encoded,left_index=True,right_index=True)
+mutualInformation_test_dis = raw.merge(scaled,left_index=True,right_index=True)
+mutualInformation_test_dis = mutualInformation_test_dis.merge(encoded,left_index=True,right_index=True)
 
  
 #%%
 # ---------------------------------------------------
 
-# Testing effect of scaling in training data 
+# Testing effect of label encoding training data 
 
 # importing cleaned data
 cleaned_data = pd.read_csv("cleaned_data_forML.csv")
@@ -94,28 +94,29 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 #%% 
 
 # computing mutual information for columns in cgMLST_train
-mutualI_raw = mutual_info_classif(cgMLST_train, labels_train, random_state=3, n_neighbors=1)
+mutualI_raw = mutual_info_classif(cgMLST_train, labels_train, random_state=3, discrete_features=True)
 mutualI_raw = pd.DataFrame({'MI_raw':mutualI_raw})
 mutualI_raw.index = cgMLST_train.columns
 raw_cgMLST = mutualI_raw.sort_values(by="MI_raw", ascending=False)
 raw_cgMLST.head()
 
-# scaling before feature selection
-scaler = StandardScaler()
-cgMLST_train_scaled = scaler.fit_transform(cgMLST_train)
+# encoding features before feature selection
+feature_encoder = OrdinalEncoder()
+cgMLST_train_encoded = feature_encoder.fit_transform(cgMLST_train)
+
 # computing mutual information for columns in scaled cgMLST_train
-mutualI_scaled = mutual_info_classif(cgMLST_train_scaled, labels_train, random_state=3, n_neighbors=1)
-mutualI_scaled = pd.DataFrame({'MI_scaled':mutualI_scaled})
-mutualI_scaled.index = cgMLST_train.columns
-scaled_cgMLST = mutualI_scaled.sort_values(by="MI_scaled", ascending=False)
-scaled_cgMLST.head()
+mutualI_encoded = mutual_info_classif(cgMLST_train_encoded, labels_train, random_state=3, discrete_features=True)
+mutualI_encoded = pd.DataFrame({'MI_encoded':mutualI_encoded})
+mutualI_encoded.index = cgMLST_train.columns
+encoded_cgMLST = mutualI_encoded.sort_values(by="MI_encoded", ascending=False)
+encoded_cgMLST.head()
 
 # Comparing raw cgMLST trainigdata with the scaled cgMLST training data
-mutualInformation_cgMLST = raw_cgMLST.merge(scaled_cgMLST,left_index=True,right_index=True)
-mutualInformation_cgMLST["divergens"] = mutualInformation_cgMLST["MI_raw"]-mutualInformation_cgMLST["MI_scaled"]
+mutualInformation_cgMLST = raw_cgMLST.merge(encoded_cgMLST,left_index=True,right_index=True)
+mutualInformation_cgMLST["divergens"] = mutualInformation_cgMLST["MI_raw"]-mutualInformation_cgMLST["MI_encoded"]
 
 print("Max:",mutualInformation_cgMLST["divergens"].max(), "   Min:",mutualInformation_cgMLST["divergens"].min())
-# Max: 0.002218934911242698    Min: -0.002218934911242476
+# Max: 0    Min: 0
 
 # saving mutual information calculation for features in train witout scale
-# raw_cgMLST.to_csv("mutualInfo_trainingdata.csv", index=True)
+#raw_cgMLST.to_csv("mutualInfo_trainingdata_discrete.csv", index=True)
