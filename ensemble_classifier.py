@@ -59,16 +59,11 @@ cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 # setup for random forest model
 RF_model = RandomForestClassifier(random_state=2)
 
-# setup for random forest pipeline with feature selection added in GridSearch
-RF_pipe = make_pipeline(SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3)), 
-                        RandomForestClassifier(random_state=2))
-# parameters for RF_pipe : 
-# param_grid_RF = [{'randomforestclassifier__n_estimators': [300, 400, 500, 600, 700, 800], 'randomforestclassifier__criterion': ['gini'],'selectpercentile__percentile':[10, 20, 30, 40, 50] }]
 # parameter for RF_model
 param_grid_RF = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'criterion': ['gini']}]
 
 # 5-fold cross validation with 5 repeats
-cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5)
+cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=3)
 
 # gridsearch for best parameters with cross validation
 gs_RF = GridSearchCV(estimator=RF_model, 
