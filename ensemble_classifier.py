@@ -5,15 +5,11 @@
 import pandas as pd
 import numpy as np 
 from functools import partial
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV, RepeatedStratifiedKFold
 from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_selection import mutual_info_classif
-from sklearn.feature_selection import SelectPercentile
+from sklearn.feature_selection import mutual_info_classif, SelectPercentile
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
-from sklearn.pipeline import make_pipeline
-from sklearn.metrics import classification_report
-from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 
 #%%
 
@@ -45,27 +41,19 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         stratify=labels,
         random_state=3)
 
-#%%
-# feature selection based on mutual information
-# percentile best features
-percentile_threshold = 10
-pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
-
-# reducing train to p-best features
-cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 
 #%% 
 
-# setup for random forest model
+# setup for random forest classifier
 RF_model = RandomForestClassifier(random_state=2)
 
 # parameter for RF_model
 param_grid_RF = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'criterion': ['gini']}]
 
-# 5-fold cross validation with 5 repeats
+# 5-fold cross validation with 10 repeats
 cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=3)
 
-# gridsearch for best parameters with cross validation
+# gridsearch for best parameter search
 gs_RF = GridSearchCV(estimator=RF_model, 
                   param_grid=param_grid_RF, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
@@ -73,6 +61,16 @@ gs_RF = GridSearchCV(estimator=RF_model,
                   refit='weighted_f1',
                   return_train_score=True,
                   n_jobs=-1)
+
+#%%
+
+# feature selection based on mutual information
+# percentile best features (10, 20, 30, 40, 50)
+percentile_threshold = 10  
+pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
+
+# reducing train to p-best features
+cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 
 #%%
 
@@ -89,23 +87,23 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
 # performanceResults_trainingdata.to_csv("performanceTrainingdata_RFmodel_10p_240117.csv", index=False)
 
 # best model
+clf_RF = gs_model_RF.best_estimator_
 print(gs_model_RF.best_params_)
 print(gs_model_RF.best_score_)
-clf_RF = gs_model_RF.best_estimator_
 
 #%% 
 
 # feature reduction test set
 cgMLST_test_pBestReduced = pBest.transform(cgMLST_test)
 
-# predicting 
+# predicting test using best model
 proba_predict = clf_RF.predict_proba(cgMLST_test_pBestReduced)
 labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 
 #%% 
 
-# performance metrics test
+# performance metrics for test prediction
 performanceReport_testdata = classification_report(
             labels_test,
             labelno_predict,
@@ -113,6 +111,7 @@ performanceReport_testdata = classification_report(
 
 print(performanceReport_testdata)
 
+# confusionmatrix
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labels_test,
             labelno_predict,
@@ -135,4 +134,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-probability_df.to_csv("probability_test_RFpipe_5.5_240117.csv", index=False)
+# probability_df.to_csv("probability_test_RFpipe_5.5_240117.csv", index=False)

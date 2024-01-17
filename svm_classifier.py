@@ -3,18 +3,13 @@
 
 # imports
 import pandas as pd
-import numpy as np
 from functools import partial
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_selection import mutual_info_classif
-from sklearn.feature_selection import SelectPercentile
+from sklearn.model_selection import train_test_split, GridSearchCV, RepeatedStratifiedKFold
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.feature_selection import mutual_info_classif, SelectPercentile 
 from sklearn.pipeline import make_pipeline
 from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
-from sklearn.metrics import classification_report
-from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 
 #%%
 
@@ -47,35 +42,28 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         random_state=3)
 
 #%%
-
-# feature selection based on mutual information
-# percentile best features
-percentile_threshold = 10
-pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
-
-# reducing train to p-best features
-cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
-
-#%%
 # setup for support vector clasifier 
 SVM_model = SVC(random_state=2)
-# SVC with pipeline fro scaling
+# setup for support vector pipeline with scaling
 SVM_pipe = make_pipeline(StandardScaler(),
                          SVC(random_state=2))
 
-# parameter range for C
+# parameter range for C (cost)
 param_rangeC  = [1.5, 2.0, 3.0, 3.5, 4.0, 5.0, 5.5, 6.0]
 # parameter range for gamma for scaling of the rbf-kernel
 param_rangeG = [0.0005, 0.001, 0.002, 0.003, 0.005]   
 
 # parameters
-# add svc__ for SVM_pipe   
+# for SVM_model
+# param_grid_SVM = [{'C': param_rangeC, 'gamma': param_rangeG, 'kernel': ['rbf']}]
+# for SVM_pipe   
 param_grid_SVM = [{'svc__C': param_rangeC, 'svc__gamma': param_rangeG, 'svc__kernel': ['rbf']}]
 
-# 5-fold cross validation with 5 repeats
+# 5-fold cross validation with 10 repeats
 cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=3)
 
-# Estimator: SVM_pipe = scaling, SVM_model = no scaling
+# gridsearch for best parameter search
+# estimator: SVM_pipe = scaling, SVM_model = no scaling
 gs_SVM = GridSearchCV(estimator=SVM_pipe, 
                   param_grid=param_grid_SVM, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
@@ -83,6 +71,16 @@ gs_SVM = GridSearchCV(estimator=SVM_pipe,
                   refit='weighted_f1',
                   return_train_score=True,
                   n_jobs=-1)
+
+#%%
+
+# feature selection based on mutual information
+# percentile best features (10, 20, 30, 40, 50)
+percentile_threshold = 10
+pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
+
+# reducing train to p-best features
+cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 
 #%%
 
@@ -99,22 +97,22 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
 # performanceResults_trainingdata.to_csv("performanceTrainingdata_no_svm.csv", index=False)
 
 # best model
+clf_SVM = gs_model_SVM.best_estimator_
 print(gs_model_SVM.best_params_)
 print(gs_model_SVM.best_score_)
-clf_SVM = gs_model_SVM.best_estimator_
 
 #%% 
 
 # feature reduction test set
 cgMLST_test_pBestReduced = pBest.transform(cgMLST_test)
 
-# predicting 
+# predicting test using best model
 labelno_predict = clf_SVM.predict(cgMLST_test_pBestReduced)
 source_predict=[label_dict[x] for x in labelno_predict]
 
 #%% 
 
-# performance metrics test
+# performance metrics for test predictions
 performanceReport_testdata = classification_report(
             labels_test,
             labelno_predict,
@@ -122,6 +120,7 @@ performanceReport_testdata = classification_report(
 
 print(performanceReport_testdata)
 
+# confusionmatrix 
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labels_test,
             labelno_predict,
