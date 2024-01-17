@@ -10,7 +10,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.feature_selection import SelectPercentile
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
 
@@ -47,7 +47,7 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 #%%
 # feature selection based on mutual information
 # percentile best features
-percentile_threshold = 20
+percentile_threshold = 10
 pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
 
 # reducing train to p-best features
@@ -59,13 +59,15 @@ cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 RF_model = RandomForestClassifier(random_state=2)
 
 # parameters
-param_grid_RF = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'class_weight':['balanced', None], 'criterion': ['gini']}]
+param_grid_RF = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'criterion': ['gini']}]
+
+cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10)
 
 # gridsearch for best parameters 5-fold cross validation
 gs_RF = GridSearchCV(estimator=RF_model, 
                   param_grid=param_grid_RF, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
-                  cv=5,
+                  cv=cv,
                   refit='weighted_f1',
                   return_train_score=True,
                   n_jobs=-1)
