@@ -11,6 +11,7 @@ from sklearn.feature_selection import mutual_info_classif
 from sklearn.feature_selection import SelectPercentile
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
+from sklearn.pipeline import make_pipeline
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
 
@@ -58,12 +59,18 @@ cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 # setup for random forest model
 RF_model = RandomForestClassifier(random_state=2)
 
-# parameters
+# setup for random forest pipeline with feature selection added in GridSearch
+RF_pipe = make_pipeline(SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3)), 
+                        RandomForestClassifier(random_state=2))
+# parameters for RF_pipe : 
+# param_grid_RF = [{'randomforestclassifier__n_estimators': [300, 400, 500, 600, 700, 800], 'randomforestclassifier__criterion': ['gini'],'selectpercentile__percentile':[10, 20, 30, 40, 50] }]
+# parameter for RF_model
 param_grid_RF = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'criterion': ['gini']}]
 
-cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10)
+# 5-fold cross validation with 5 repeats
+cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=5)
 
-# gridsearch for best parameters 5-fold cross validation
+# gridsearch for best parameters with cross validation
 gs_RF = GridSearchCV(estimator=RF_model, 
                   param_grid=param_grid_RF, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
@@ -84,7 +91,7 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-# performanceResults_trainingdata.to_csv("performanceTrainingdata_no_RF.csv", index=False)
+# performanceResults_trainingdata.to_csv("performanceTrainingdata_RFmodel_10p_240117.csv", index=False)
 
 # best model
 print(gs_model_RF.best_params_)
@@ -133,4 +140,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-# probability_df.to_csv("probability_test_no_RF.csv", index=False)
+probability_df.to_csv("probability_test_RFpipe_5.5_240117.csv", index=False)
