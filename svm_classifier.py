@@ -12,7 +12,7 @@ from sklearn.feature_selection import SelectPercentile
 from sklearn.pipeline import make_pipeline
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
 from sklearn.metrics import classification_report
 from sklearn.metrics import ConfusionMatrixDisplay
 
@@ -64,7 +64,7 @@ SVM_pipe = make_pipeline(StandardScaler(),
                          SVC(random_state=2))
 
 # parameter range for C
-param_rangeC  = [1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 5.5]
+param_rangeC  = [1.5, 2.0, 3.0, 3.5, 4.0, 5.0, 5.5, 6.0]
 # parameter range for gamma for scaling of the rbf-kernel
 param_rangeG = [0.0005, 0.001, 0.002, 0.003, 0.005]   
 
@@ -72,11 +72,14 @@ param_rangeG = [0.0005, 0.001, 0.002, 0.003, 0.005]
 # add svc__ for SVM_pipe   
 param_grid_SVM = [{'svc__C': param_rangeC, 'svc__gamma': param_rangeG, 'svc__kernel': ['rbf']}]
 
+# 5-fold cross validation with 5 repeats
+cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=3)
+
 # Estimator: SVM_pipe = scaling, SVM_model = no scaling
 gs_SVM = GridSearchCV(estimator=SVM_pipe, 
                   param_grid=param_grid_SVM, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
-                  cv=5,
+                  cv=cv,
                   refit='weighted_f1',
                   return_train_score=True,
                   n_jobs=-1)
