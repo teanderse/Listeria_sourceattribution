@@ -4,6 +4,7 @@
 # imports
 import pandas as pd
 import numpy as np
+from functools import partial
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_selection import mutual_info_classif
@@ -47,11 +48,10 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%%
 
-np.random.seed(3)
 # feature selection based on mutual information
 # percentile best features
-percentile_threshold = 40
-pBest= SelectPercentile(mutual_info_classif, percentile=percentile_threshold)
+percentile_threshold = 10
+pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
 
 # reducing train to p-best features
 cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
@@ -64,9 +64,9 @@ SVM_pipe = make_pipeline(StandardScaler(),
                          SVC(random_state=2))
 
 # parameter range for C
-param_rangeC  = [0.01, 0.03, 0.05, 0.07,  0.1, 1.0, 2.0, 3.0, 3.5, 4.0, 5.0]
+param_rangeC  = [1.0, 2.0, 3.0, 3.5, 4.0, 5.0, 5.5]
 # parameter range for gamma for scaling of the rbf-kernel
-param_rangeG = [0.0001, 0.001,0.005, 0.01, 0.015, 0.1, 1.0, 5.0]   
+param_rangeG = [0.0005, 0.001, 0.002, 0.003, 0.005]   
 
 # parameters
 # add svc__ for SVM_pipe   
