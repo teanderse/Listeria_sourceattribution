@@ -9,6 +9,7 @@ import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import mutual_info_classif, SelectPercentile
+from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 
 #%%
 
@@ -83,11 +84,16 @@ ShallowDense_model_history = ShallowDense_model.fit(x_train, y_train, batch_size
 
 #%%
 
-test_results = ShallowDense_model.evaluate(cgMLST_test, labels_test, return_dict=True)
+# feature reduction test set
+cgMLST_test_pBestReduced = pBest.transform(cgMLST_test)
+
+# get accuracy and f1-weighted scores
+test_results = ShallowDense_model.evaluate(cgMLST_test_pBestReduced, labels_test, return_dict=True)
+print(test_results)
+
+# predicting test set
 test_predict = ShallowDense_model.predict(cgMLST_test)
 # np.savetxt(X= test_predict, fname="shallowDense_testPredict.csv", delimiter=",")
-
-print(test_results)
 
 #%%
 
@@ -97,14 +103,34 @@ labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 
 # true sources in test into source names
-sourceno_true = list(np.argmax(labels_test, axis = 1))
-source_true=[label_dict[x] for x in sourceno_true]
+labelno_true = list(np.argmax(labels_test, axis = 1))
+source_true=[label_dict[x] for x in labelno_true]
+
+#%% 
+
+# performance metrics for test prediction
+performanceReport_testdata = classification_report(
+            labelno_true,
+            labelno_predict,
+            target_names=label_dict.values())
+
+print(performanceReport_testdata)
+
+# confusionmatrix
+conf_matrix = ConfusionMatrixDisplay.from_predictions(
+            labelno_true,
+            labelno_predict,
+            display_labels=label_dict.values(),
+            xticks_rotation= 'vertical')
+conf_matrix.ax_.set_title("Conf. matrix -p")
+
+#%%
 
 # dataframe for the probabilityes predicted
 labels_true = [list(source_true)]
 predictions = [list(source_predict)]
-proba_predict = list(proba_predict.T)
-predictions += [list(x) for x in proba_predict]
+proba_predictlst = list(proba_predict.T)
+predictions += [list(x) for x in proba_predictlst]
 df_input = labels_true + predictions  
 column_headers = ["true source","prediction"]
 column_headers += ["probability_{}".format(label_dict[x])for x in range(len(label_dict.keys()))]
