@@ -23,7 +23,7 @@ cgMLST_data = cleaned_data.iloc[:, 1:-1]
 labels_txt = cleaned_data.Source
 sample_id = cleaned_data.SRA_no
 
-# encode lables as integers and then as one-hot encoded dummies
+# encode lables as integers first and then as one-hot encoded dummies
 encoder = LabelEncoder()
 labels_int = encoder.fit_transform(labels_txt)
 labels = OneHotEncoder(sparse_output=False).fit_transform(labels_int.reshape(-1, 1))
@@ -40,7 +40,6 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         test_size=0.30,
         stratify=labels,
         random_state=3)
-
 
 #%% 
 
@@ -71,7 +70,7 @@ cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 
 # splitting trainigdata to get validation data for model training (20% validation data)
 x_train, x_val, y_train, y_val = train_test_split(
-        cgMLST_train,
+        cgMLST_train_pBestReduced,
         labels_train,
         test_size=0.20,
         stratify=labels_train,
@@ -93,7 +92,7 @@ print(test_results)
 #%%
 
 # probabilities test into source names 
-proba_predict =  pd.read_csv("shallowDense_testPredict.csv", names=(0, 1, 2, 3, 4))
+proba_predict =  np.loadtxt("shallowDense_testPredict.csv", delimiter=",")
 labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 
@@ -104,8 +103,7 @@ source_true=[label_dict[x] for x in sourceno_true]
 # dataframe for the probabilityes predicted
 labels_true = [list(source_true)]
 predictions = [list(source_predict)]
-proba_predict = proba_predict
-proba_predict = list(proba_predict)
+proba_predict = list(proba_predict.T)
 predictions += [list(x) for x in proba_predict]
 df_input = labels_true + predictions  
 column_headers = ["true source","prediction"]
@@ -114,14 +112,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-#probability_df.to_csv("probability_test_RFmodel_50p_240117.csv", index=False)
-
-
-
-
-
-
-
-
-
-
+#probability_df.to_csv("probability_test.csv", index=False)
