@@ -84,7 +84,7 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-# performanceResults_trainingdata.to_csv("performanceTrainingdata_RFmodel_10p_240117.csv", index=False)
+#performanceResults_trainingdata.to_csv("performanceTrainingdata_RFmodel_50p_240117.csv", index=False)
 
 # best model
 clf_RF = gs_model_RF.best_estimator_
@@ -117,7 +117,7 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labelno_predict,
             display_labels=label_dict.values(),
             xticks_rotation= 'vertical')
-conf_matrix.ax_.set_title("Conf. matrix")
+conf_matrix.ax_.set_title("Conf. matrix -p")
 
 #%%
 
@@ -134,4 +134,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-# probability_df.to_csv("probability_test_RFpipe_5.5_240117.csv", index=False)
+#probability_df.to_csv("probability_test_RFmodel_50p_240117.csv", index=False)
