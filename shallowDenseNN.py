@@ -71,7 +71,7 @@ cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 
 # splitting trainigdata to get validation data for model training (20% validation data)
 x_train, x_val, y_train, y_val = train_test_split(
-        cgMLST_train_pBestReduced,
+        cgMLST_train,
         labels_train,
         test_size=0.20,
         stratify=labels_train,
@@ -122,7 +122,7 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labelno_predict,
             display_labels=label_dict.values(),
             xticks_rotation= 'vertical')
-conf_matrix.ax_.set_title("Conf. matrix -p")
+conf_matrix.ax_.set_title("Conf. matrix SDnn-p")
 
 #%%
 
