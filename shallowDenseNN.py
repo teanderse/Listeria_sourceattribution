@@ -5,7 +5,7 @@
 import numpy as np
 import pandas as pd
 from functools import partial
-#import tensorflow as tf
+import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.feature_selection import mutual_info_classif, SelectPercentile
