@@ -43,10 +43,10 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%%
 # setup for support vector clasifier 
-SVM_model = SVC(random_state=2)
+SVM_model = SVC()
 # setup for support vector pipeline with scaling
 SVM_pipe = make_pipeline(StandardScaler(),
-                         SVC(random_state=2))
+                         SVC())
 
 # parameter range for C (cost)
 param_rangeC  = [1.5, 2.0, 3.0, 3.5, 4.0, 5.0, 5.5, 6.0]
@@ -54,17 +54,17 @@ param_rangeC  = [1.5, 2.0, 3.0, 3.5, 4.0, 5.0, 5.5, 6.0]
 param_rangeG = [0.0005, 0.001, 0.002, 0.003, 0.005]   
 
 # parameters
-# for SVM_model
-# param_grid_SVM = [{'C': param_rangeC, 'gamma': param_rangeG, 'kernel': ['rbf']}]
-# for SVM_pipe   
-param_grid_SVM = [{'svc__C': param_rangeC, 'svc__gamma': param_rangeG, 'svc__kernel': ['rbf']}]
+# for SVM_model with no scaling
+param_grid_SVM = [{'C': param_rangeC, 'gamma': param_rangeG, 'kernel': ['rbf']}]
+# for SVM_pipe rbf kernel  
+#param_grid_SVM = [{'svc__C': param_rangeC, 'svc__gamma': param_rangeG, 'svc__kernel': ['rbf']}]
 
 # 5-fold cross validation with 10 repeats
 cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=3)
 
 # gridsearch for best parameter search
 # estimator: SVM_pipe = scaling, SVM_model = no scaling
-gs_SVM = GridSearchCV(estimator=SVM_pipe, 
+gs_SVM = GridSearchCV(estimator=SVM_model, 
                   param_grid=param_grid_SVM, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
                   cv=cv,
@@ -84,7 +84,8 @@ cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 
 #%%
 
-# fiting model and finding best parameters 
+# fiting model to cgMLST_train for all features and cgMLST_train_pBestReduced for selected features
+# finding best hyperparameters 
 gs_model_SVM = gs_SVM.fit(cgMLST_train_pBestReduced, labels_train)
 
 # mean performance results for the different parameters
@@ -94,7 +95,7 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-#performanceResults_trainingdata.to_csv("performanceTrainingdata_SVMmodel_50p_240117.csv", index=False)
+performanceResults_trainingdata.to_csv("performanceTrainingdata_SVMnokernel_all_240124.csv", index=False)
 
 # best model
 clf_SVM = gs_model_SVM.best_estimator_
@@ -125,8 +126,9 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labels_test,
             labelno_predict,
             display_labels=label_dict.values(),
-            xticks_rotation= 'vertical')
-conf_matrix.ax_.set_title("Conf. matrix p-")
+            xticks_rotation= 'vertical',
+            cmap='Greens')
+conf_matrix.ax_.set_title("Conf. matrix SVM all")
 
 #%%
 
@@ -141,4 +143,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-#probability_df.to_csv("probability_test_SVMmodel_50p_240117", index=False)
+probability_df.to_csv("probability_test_SVMnokernel_all_240124", index=False)

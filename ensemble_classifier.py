@@ -74,7 +74,8 @@ cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
 
 #%%
 
-# fiting model and finding best parameters 
+# fiting model to cgMLST_train for all features and cgMLST_train_pBestReduced for selected features
+# finding best hyperparameters  
 gs_model_RF = gs_RF.fit(cgMLST_train_pBestReduced, labels_train)
 
 # mean performance results for the different parameters
@@ -84,7 +85,7 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-#performanceResults_trainingdata.to_csv("performanceTrainingdata_RFmodel_50p_240117.csv", index=False)
+#performanceResults_trainingdata.to_csv("performanceTrainingdata_RFmodel_all_240124.csv", index=False)
 
 # best model
 clf_RF = gs_model_RF.best_estimator_
@@ -116,8 +117,9 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labels_test,
             labelno_predict,
             display_labels=label_dict.values(),
-            xticks_rotation= 'vertical')
-conf_matrix.ax_.set_title("Conf. matrix -p")
+            xticks_rotation= 'vertical',
+            cmap='Greens')
+conf_matrix.ax_.set_title("Conf. matrix RF -p")
 
 #%%
 
@@ -134,4 +136,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-#probability_df.to_csv("probability_test_RFmodel_50p_240117.csv", index=False)
+# probability_df.to_csv("probability_test_RFmodel_all_240124.csv", index=False)

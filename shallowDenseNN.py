@@ -5,11 +5,12 @@
 import numpy as np
 import pandas as pd
 from functools import partial
-import tensorflow as tf
+#import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.feature_selection import mutual_info_classif, SelectPercentile
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay
+from scikeras.wrappers import KerasClassifier
 
 #%%
 
@@ -21,13 +22,12 @@ cleaned_data = pd.read_csv("cleaned_data_forML.csv")
 # spliting source labels, cgmlst-data and SRA id-number
 # (assuming SRA_no and Source is first and last column)
 cgMLST_data = cleaned_data.iloc[:, 1:-1]
-labels_txt = cleaned_data.Source
+labels = cleaned_data.Source
 sample_id = cleaned_data.SRA_no
 
-# encode lables as integers first and then as one-hot encoded dummies
+# encode lables as integers
 encoder = LabelEncoder()
-labels_int = encoder.fit_transform(labels_txt)
-labels = OneHotEncoder(sparse_output=False).fit_transform(labels_int.reshape(-1, 1))
+labels_encoded = encoder.fit_transform(labels)
 
 # saving label integer and source name in dictionary
 label_dict = dict(zip((encoder.transform(encoder.classes_)), encoder.classes_ ))
@@ -37,27 +37,12 @@ label_dict = dict(zip((encoder.transform(encoder.classes_)), encoder.classes_ ))
 # split randomly into training(70%) and testing(30%)
 cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         cgMLST_data,
-        labels,
+        labels_encoded,
         test_size=0.30,
-        stratify=labels,
+        stratify=labels_encoded,
         random_state=3)
 
 #%% 
-
-# setup for shallow dense neural network
-ShallowDense_model = tf.keras.Sequential(
-    [
-        tf.keras.layers.Dense(64, input_dim=1734),
-        tf.keras.layers.Dropout(0.5),
-        tf.keras.layers.Dense(64, activation="relu"),
-        tf.keras.layers.Dense(5, activation="softmax")
-    ]
-)
-
-ShallowDense_model.compile(loss="categorical_crossentropy", optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), metrics=["accuracy", tf.keras.metrics.F1Score(average='weighted')])
-ShallowDense_model.summary()
-
-#%%
 
 # feature selection based on mutual information
 # percentile best features (10, 20, 30, 40, 50)
@@ -66,34 +51,120 @@ pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_feature
 
 # reducing train to p-best features
 cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
-
-#%%
-
-# splitting trainigdata to get validation data for model training (20% validation data)
-x_train, x_val, y_train, y_val = train_test_split(
-        cgMLST_train,
-        labels_train,
-        test_size=0.20,
-        stratify=labels_train,
-        random_state=3)
-
-#%%
-
-ShallowDense_model_history = ShallowDense_model.fit(x_train, y_train, batch_size=541, epochs=200, validation_data=(x_val, y_val),
-                                    callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=50))
-
-#%%
-
 # feature reduction test set
 cgMLST_test_pBestReduced = pBest.transform(cgMLST_test)
 
-# get accuracy and f1-weighted scores
-test_results = ShallowDense_model.evaluate(cgMLST_test_pBestReduced, labels_test, return_dict=True)
-print(test_results)
+#%%
 
-# predicting test set
-test_predict = ShallowDense_model.predict(cgMLST_test)
-# np.savetxt(X= test_predict, fname="shallowDense_testPredict.csv", delimiter=",")
+# one hot encoding the labels
+labels_test = OneHotEncoder(sparse_output=False).fit_transform(labels_test.reshape(-1, 1))
+labels_train = OneHotEncoder(sparse_output=False).fit_transform(labels_train.reshape(-1, 1))
+
+#%%
+
+# adding metrics for performance measure
+f1_macro = tf.keras.metrics.F1Score(average='macro', name='f1_macro')
+f1_weighted =tf.keras.metrics.F1Score(average='weighted', name='f1_weighted')
+
+#%%
+
+# function for making neural network models and finding best hyperparameters with gridsearch
+# function
+def create_shallowDenseNN(input_dim, neurons, dropout_rate ):
+  ShallowDense_model = tf.keras.Sequential()
+  ShallowDense_model.add(tf.keras.layers.Dense(neurons, input_dim=input_dim, activation="relu"))
+  ShallowDense_model.add(tf.keras.layers.Dropout(dropout_rate))
+  ShallowDense_model.add(tf.keras.layers.Dense(5, activation="softmax"))
+
+  return ShallowDense_model
+
+# set up for shallow dense neural network
+# input dimentions: all features=1734, 10%=174 , 20%=347 , 30%=520 , 40%=694 , 50%=867
+ShallowDense_model = KerasClassifier(model=create_shallowDenseNN, input_dim=1734, loss="categorical_crossentropy",
+                                     optimizer=tf.keras.optimizers.Adam,
+                                     metrics=["accuracy", f1_weighted, f1_macro], epochs=100, batch_size=676,
+                                     callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=50))
+
+# tune number of nodes, dropout rate and learning rate
+# hyperparameter for SDNN_model
+learning_rate = [0.0005, 0.0001]
+dropout_rate = [0.3, 0.4]
+nodes = [75, 78, 80]
+param_grid_SDNN = [{'model__neurons':nodes, 'optimizer__learning_rate': learning_rate, 'model__dropout_rate':dropout_rate}]
+
+# gridsearch for best parameter search run 5 times for
+gs_SDNN = GridSearchCV(estimator=ShallowDense_model,
+                  param_grid=param_grid_SDNN,
+                  scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}),
+                  cv=5,
+                  refit='weighted_f1',
+                  return_train_score=True)
+
+# fiting model to cgMLST_train for all features and cgMLST_train_pBestReduced for selected features
+gs_model_SDNN = gs_SDNN.fit(cgMLST_train, labels_train)
+
+print("Best fi weighted: %f using %s" % (gs_model_SDNN.best_score_, gs_model_SDNN.best_params_))
+
+#%%
+
+# best hyperparmeters
+# all features
+neuron_no = 80
+dropout_r = 0.3
+learning_r= 0.0005
+
+# input dimentions for different feature selected data sets
+all = 1734
+# p10 = 174
+# p20 = 347
+# p30 = 520
+# p40 = 694
+# p50 = 867
+
+
+# empty lists to append performance metrics
+accu_list_all = list()
+f1W_list_all = list()
+f1M_list_all = list()
+test_results= []
+
+# looping over trainig and testing 30 times
+for i in range(1,31):
+  ShallowDense_model_optimized = tf.keras.Sequential(
+    [
+        tf.keras.layers.Dense(neuron_no, input_dim=all, activation="relu"),
+        tf.keras.layers.Dropout(dropout_r),
+        tf.keras.layers.Dense(5, activation="softmax")
+    ]
+  )
+
+  ShallowDense_model_optimized.compile(loss="categorical_crossentropy", optimizer=tf.keras.optimizers.Adam(learning_rate=learning_r), metrics=["accuracy", f1_weighted, f1_macro])
+  ShallowDense_model_optimized_history = ShallowDense_model_optimized.fit(cgMLST_train, labels_train, batch_size=676, epochs=100, callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=8))
+  # appending training performanse metrics
+  accu = list(ShallowDense_model_optimized_history.history['accuracy'])[-1]
+  accu_list_all.append(accu)
+  f1W = list(ShallowDense_model_optimized_history.history['f1_weighted'])[-1]
+  f1W_list_all.append(f1W)
+  f1M = list(ShallowDense_model_optimized_history.history['f1_macro'])[-1]
+  f1M_list_all.append(f1M)
+    
+  # appending testing performance metrics and saving predictions
+  test_res = ShallowDense_model_optimized.evaluate(cgMLST_test, labels_test, return_dict=True)
+  test_results.append(test_res)
+  test_pred = ShallowDense_model_optimized.predict(cgMLST_test)
+  np.savetxt(X= test_pred, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/all_shallowDense_testPredict{i}.csv", delimiter=",")
+
+#%%
+
+#Saving performance metrics
+
+#np.savetxt(X= f1W_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/f1W_train_all.csv", delimiter=",")
+#np.savetxt(X= f1M_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/f1M_train_all.csv", delimiter=",")
+#np.savetxt(X= accu_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/accu_train_all.csv", delimiter=",")
+#np.savetxt(X= test_results, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/testResults_all.csv", delimiter=",")
+#test_result_df = pd.DataFrame.from_dict(test_results)
+#test_result_df.to_csv("/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/testResults_all.csv")
+
 
 #%%
 
@@ -121,21 +192,7 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labelno_true,
             labelno_predict,
             display_labels=label_dict.values(),
-            xticks_rotation= 'vertical')
-conf_matrix.ax_.set_title("Conf. matrix SDnn-p")
+            xticks_rotation= 'vertical',
+            cmap='Greens')
+conf_matrix.ax_.set_title("Conf. matrix SDnn -p")
 
-#%%
-
-# dataframe for the probabilityes predicted
-labels_true = [list(source_true)]
-predictions = [list(source_predict)]
-proba_predictlst = list(proba_predict.T)
-predictions += [list(x) for x in proba_predictlst]
-df_input = labels_true + predictions  
-column_headers = ["true source","prediction"]
-column_headers += ["probability_{}".format(label_dict[x])for x in range(len(label_dict.keys()))]
-
-probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
-
-# saving performance result test data
-#probability_df.to_csv("probability_test.csv", index=False)
