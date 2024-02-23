@@ -69,7 +69,6 @@ f1_weighted =tf.keras.metrics.F1Score(average='weighted', name='f1_weighted')
 #%%
 
 # function for making neural network models and finding best hyperparameters with gridsearch
-# function
 def create_shallowDenseNN(input_dim, neurons, dropout_rate ):
   ShallowDense_model = tf.keras.Sequential()
   ShallowDense_model.add(tf.keras.layers.Dense(neurons, input_dim=input_dim, activation="relu"))
@@ -79,8 +78,14 @@ def create_shallowDenseNN(input_dim, neurons, dropout_rate ):
   return ShallowDense_model
 
 # set up for shallow dense neural network
-# input dimentions: all features=1734, 10%=174 , 20%=347 , 30%=520 , 40%=694 , 50%=867
-ShallowDense_model = KerasClassifier(model=create_shallowDenseNN, input_dim=1734, loss="categorical_crossentropy",
+# input dimentions for different feature selected data sets
+all_ = 1734
+# p10 = 174
+# p20 = 347
+# p30 = 520
+# p40 = 694
+# p50 = 867
+ShallowDense_model = KerasClassifier(model=create_shallowDenseNN, input_dim=all_, loss="categorical_crossentropy",
                                      optimizer=tf.keras.optimizers.Adam,
                                      metrics=["accuracy", f1_weighted, f1_macro], epochs=100, batch_size=676,
                                      callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=50))
@@ -107,14 +112,14 @@ print("Best fi weighted: %f using %s" % (gs_model_SDNN.best_score_, gs_model_SDN
 
 #%%
 
-# best hyperparmeters
+# best hyperparmeters set as found in grid search
 # all features
-neuron_no = 80
-dropout_r = 0.3
-learning_r= 0.0005
-
+neuron_no = 78
+dropout_r = 0.2
+learning_r = 0.0001 # all features
+# learning_r = 0.001 # selected features
 # input dimentions for different feature selected data sets
-all = 1734
+all_ = 1734
 # p10 = 174
 # p20 = 347
 # p30 = 520
@@ -132,7 +137,7 @@ test_results= []
 for i in range(1,31):
   ShallowDense_model_optimized = tf.keras.Sequential(
     [
-        tf.keras.layers.Dense(neuron_no, input_dim=all, activation="relu"),
+        tf.keras.layers.Dense(neuron_no, input_dim=all_, activation="relu"),
         tf.keras.layers.Dropout(dropout_r),
         tf.keras.layers.Dense(5, activation="softmax")
     ]
@@ -152,40 +157,44 @@ for i in range(1,31):
   test_res = ShallowDense_model_optimized.evaluate(cgMLST_test, labels_test, return_dict=True)
   test_results.append(test_res)
   test_pred = ShallowDense_model_optimized.predict(cgMLST_test)
-  np.savetxt(X= test_pred, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/all_shallowDense_testPredict{i}.csv", delimiter=",")
+  # np.savetxt(X= test_pred, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/all_shallowDense_testPredict{i}.csv", delimiter=",")
 
 #%%
 
-#Saving performance metrics
+# Saving performance metrics for 30 repeats
 
-#np.savetxt(X= f1W_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/f1W_train_all.csv", delimiter=",")
-#np.savetxt(X= f1M_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/f1M_train_all.csv", delimiter=",")
-#np.savetxt(X= accu_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/accu_train_all.csv", delimiter=",")
-#np.savetxt(X= test_results, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/testResults_all.csv", delimiter=",")
-#test_result_df = pd.DataFrame.from_dict(test_results)
-#test_result_df.to_csv("/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/testResults_all.csv")
+# np.savetxt(X= f1W_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/f1W_train_all.csv", delimiter=",")
+# np.savetxt(X= f1M_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/f1M_train_all.csv", delimiter=",")
+# np.savetxt(X= accu_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/accu_train_all.csv", delimiter=",")
+# np.savetxt(X= test_results, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/testResults_all.csv", delimiter=",")
+
+# test_result_df = pd.DataFrame.from_dict(test_results)
+# test_result_df.to_csv("/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/testResults_all.csv")
 
 
 #%%
 
-# probabilities test into source names 
-proba_predict =  np.loadtxt("shallowDense_testPredict.csv", delimiter=",")
-labelno_predict = list(np.argmax(proba_predict, axis = 1))
-source_predict=[label_dict[x] for x in labelno_predict]
+# saving performance report for 30 repeats
+for i in range(1,31):
+  # probabilities test into source names
+  proba_predict = np.loadtxt(f'/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/all_shallowDense_testPredict{i}.csv', delimiter=',')
+  labelno_predict = list(np.argmax(proba_predict, axis = 1))
+  source_predict=[label_dict[x] for x in labelno_predict]
 
-# true sources in test into source names
-labelno_true = list(np.argmax(labels_test, axis = 1))
-source_true=[label_dict[x] for x in labelno_true]
+  # true sources in test into source names
+  labelno_true = list(np.argmax(labels_test, axis = 1))
+  source_true=[label_dict[x] for x in labelno_true]
+
+  performanceReport_testdata = classification_report(
+              labelno_true,
+              labelno_predict,
+              target_names=label_dict.values(),
+              output_dict = True)
+
+  performanceReport_testdata_df = pd.DataFrame.from_dict(performanceReport_testdata)
+  #performanceReport_testdata_df.to_csv(f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/all_performanceReport_testdata_df_{i}.csv")
 
 #%% 
-
-# performance metrics for test prediction
-performanceReport_testdata = classification_report(
-            labelno_true,
-            labelno_predict,
-            target_names=label_dict.values())
-
-print(performanceReport_testdata)
 
 # confusionmatrix
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
@@ -194,5 +203,5 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             display_labels=label_dict.values(),
             xticks_rotation= 'vertical',
             cmap='Greens')
-conf_matrix.ax_.set_title("Conf. matrix SDnn -p")
+conf_matrix.ax_.set_title("Conf. matrix SDnn -%")
 
