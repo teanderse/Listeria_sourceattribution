@@ -46,7 +46,7 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 # feature selection based on mutual information
 # percentile best features (10, 20, 30, 40, 50)
-percentile_threshold = 10  
+percentile_threshold = 50  
 pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
 
 # reducing train to p-best features
@@ -108,7 +108,8 @@ gs_SDNN = GridSearchCV(estimator=ShallowDense_model,
 # fiting model to cgMLST_train for all features and cgMLST_train_pBestReduced for selected features
 gs_model_SDNN = gs_SDNN.fit(cgMLST_train, labels_train)
 
-print("Best fi weighted: %f using %s" % (gs_model_SDNN.best_score_, gs_model_SDNN.best_params_))
+print(gs_model_SDNN.best_params_)
+print(gs_model_SDNN.best_score_) 
 
 #%%
 
@@ -152,24 +153,25 @@ for i in range(1,31):
   f1W_list_all.append(f1W)
   f1M = list(ShallowDense_model_optimized_history.history['f1_macro'])[-1]
   f1M_list_all.append(f1M)
-    
+  
+  # predicting test using best model on cgMLST_test for all features and cgMLST_test_pBestReduced for selected features
   # appending testing performance metrics and saving predictions
   test_res = ShallowDense_model_optimized.evaluate(cgMLST_test, labels_test, return_dict=True)
   test_results.append(test_res)
   test_pred = ShallowDense_model_optimized.predict(cgMLST_test)
-  # np.savetxt(X= test_pred, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/all_shallowDense_testPredict{i}.csv", delimiter=",")
+  # np.savetxt(X= test_pred, fname=f"all_shallowDense_testPredict{i}.csv", delimiter=",")
 
 #%%
 
 # Saving performance metrics for 30 repeats
 
-# np.savetxt(X= f1W_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/f1W_train_all.csv", delimiter=",")
-# np.savetxt(X= f1M_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/f1M_train_all.csv", delimiter=",")
-# np.savetxt(X= accu_list_all, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/accu_train_all.csv", delimiter=",")
-# np.savetxt(X= test_results, fname=f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/testResults_all.csv", delimiter=",")
+# np.savetxt(X= f1W_list_all, fname=f"f1W_train_all.csv", delimiter=",")
+# np.savetxt(X= f1M_list_all, fname=f"f1M_train_all.csv", delimiter=",")
+# np.savetxt(X= accu_list_all, fname=f"accu_train_all.csv", delimiter=",")
+# np.savetxt(X= test_results, fname=f"testResults_all.csv", delimiter=",")
 
 # test_result_df = pd.DataFrame.from_dict(test_results)
-# test_result_df.to_csv("/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/testResults_all.csv")
+# test_result_df.to_csv("testResults_all.csv")
 
 
 #%%
@@ -177,7 +179,7 @@ for i in range(1,31):
 # saving performance report for 30 repeats
 for i in range(1,31):
   # probabilities test into source names
-  proba_predict = np.loadtxt(f'/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/all_shallowDense_testPredict{i}.csv', delimiter=',')
+  proba_predict = np.loadtxt(f'all_shallowDense_testPredict{i}.csv', delimiter=',')
   labelno_predict = list(np.argmax(proba_predict, axis = 1))
   source_predict=[label_dict[x] for x in labelno_predict]
 
@@ -192,7 +194,7 @@ for i in range(1,31):
               output_dict = True)
 
   performanceReport_testdata_df = pd.DataFrame.from_dict(performanceReport_testdata)
-  #performanceReport_testdata_df.to_csv(f"/content/drive/MyDrive/Colab Notebooks/cgMLST_data/all_shallowDense_testPred/all_performanceReport_testdata_df_{i}.csv")
+  #performanceReport_testdata_df.to_csv(f"all_performanceReport_testdata_df_{i}.csv")
 
 #%% 
 
