@@ -125,7 +125,7 @@ performanceReport_testdata = classification_report(
             output_dict = True)
 
 performanceReport_testdata_df = pd.DataFrame.from_dict(performanceReport_testdata)
-performanceReport_testdata_df.to_csv(f"{feature}_SVM_performanceReport_testdata_df")
+performanceReport_testdata_df.to_csv(f"{feature}_SVM_performanceReport_testdata_df.csv")
 
 # confusionmatrix
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
