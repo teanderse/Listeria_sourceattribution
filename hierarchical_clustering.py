@@ -4,10 +4,8 @@
 # imports
 import pandas as pd
 from scipy.spatial.distance import pdist, squareform
-import scipy.cluster.hierarchy as hr 
+import scipy.cluster.hierarchy as hc 
 import seaborn as sns
-
-
 
 #%%
 
@@ -22,10 +20,12 @@ cgMLST_data = cleaned_data.iloc[:, 1:-1]
 labels = cleaned_data.Source
 sample_id = cleaned_data.SRA_no
 
+# calculating hamming distances
 distances = pdist(cgMLST_data, metric= "hamming")
 dist_tbl = squareform(distances)
-linkage = hr.linkage(distances, method='average')
 
+# defining linkage for clustering
+linkage = hc.linkage(distances, method='average')
 
 #%%
 
@@ -44,7 +44,3 @@ for (label, colour) in colour_map.items():
 clusterplot.ax_row_dendrogram.legend(title="Sources", ncol=1, loc='upper left', bbox_to_anchor=(0, 1.2))
 clusterplot.ax_col_dendrogram.set_visible(False)
 clusterplot.ax_heatmap.tick_params(bottom = False, right = False , labelright = False ,labelbottom = False)
-
-
-#%%
-
