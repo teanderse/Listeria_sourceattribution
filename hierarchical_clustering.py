@@ -36,7 +36,7 @@ row_colors = labels.map(colour_map).to_numpy()
 
 # hierarchical clustering using hamming distances visualised in a heatmap
 clusterplot = sns.clustermap(dist_tbl, row_linkage=linkage, col_linkage=linkage, row_colors=row_colors,
-              cmap="mako", cbar_kws={"orientation": "horizontal",'label':'hamming distance'}, cbar_pos=(.25, 0, .7, .03))
+              cmap="mako", cbar_kws={"orientation": "horizontal",'label':'Normalised hamming distance'}, cbar_pos=(.25, 0, .7, .03))
 
 # adding plot details 
 clusterplot.ax_heatmap.set_title("Hierarchical clustering heatmap", pad=70, size=22)
