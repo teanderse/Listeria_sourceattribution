@@ -79,7 +79,7 @@ cgMLST_test_pBestReduced = pBest.transform(MLST_test)
 
 #%%
 
-# fiting model to MLST_train for all features or cgMLST_train_pBestReduced for selected features in cgMLST data
+# fitting model to MLST_train for all features or cgMLST_train_pBestReduced for selected features in cgMLST data
 # finding best hyperparameters with grid search  
 gs_model_RF = gs_RF.fit(MLST_train, labels_train)
 
