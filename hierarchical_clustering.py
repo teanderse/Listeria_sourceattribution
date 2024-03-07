@@ -40,7 +40,7 @@ clusterplot = sns.clustermap(dist_tbl, row_linkage=linkage, col_linkage=linkage,
               cmap="mako", cbar_kws={"orientation": "horizontal",'label':'Normalised hamming distance'}, cbar_pos=(.25, 0, .7, .03))
 
 # adding plot details 
-clusterplot.ax_heatmap.set_title(f"Hierarchical clustering heatmap for {MLST_type}MLST", pad=70, size=22)
+clusterplot.ax_heatmap.set_title(f"Hierarchical clustering heatmap for {MLST_type}MLST data", pad=70, size=22)
 for (label, colour) in colour_map.items():
     clusterplot.ax_row_dendrogram.bar(0, 0, color=colour, label="{}".format(label))
 clusterplot.ax_row_dendrogram.legend(title="Sources", ncol=1, loc='upper left', bbox_to_anchor=(0, 1.2))
