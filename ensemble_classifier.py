@@ -13,14 +13,15 @@ from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 
 #%%
 
-# importing cleaned data
-cleaned_data = pd.read_csv("cleaned_data_forML.csv")
+# importing cleaned data for cgMLST or wgMLST
+MLST_type = "wg" # cg or wg
+cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forML.csv")
 
 #%%
 
 # spliting source labels, cgmlst-data and SRA id-number
 # (assuming SRA_no and Source is first and last column)
-cgMLST_data = cleaned_data.iloc[:, 1:-1]
+MLST_data = cleaned_data.iloc[:, 1:-1]
 labels = cleaned_data.Source
 sample_id = cleaned_data.SRA_no
 
@@ -33,9 +34,9 @@ label_dict = dict(zip((encoder.transform(encoder.classes_)), encoder.classes_ ))
 
 #%%
 
-# split randomly into training(70%) and testing(30%)
-cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
-        cgMLST_data,
+# split randomly into training(70%) and testing(30%) with seed for reproducibility
+MLST_train, MLST_test, labels_train, labels_test = train_test_split(
+        MLST_data,
         labels,
         test_size=0.30,
         stratify=labels,
@@ -44,7 +45,7 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
-# setup for random forest classifier
+# setup for random forest classifier with seed for reproducibility
 RF_model = RandomForestClassifier(random_state=2)
 
 # parameter for RF_model
@@ -64,49 +65,50 @@ gs_RF = GridSearchCV(estimator=RF_model,
 
 #%%
 
-# feature selection based on mutual information
-# percentile best features (10, 20, 30, 40, 50)
-percentile_threshold = 50  
+# Feature selection only done for cgMLST data
+
+# feature selection based on mutual information with seed for reproducibility
+# percentile best features 
+percentile_threshold = 50  #(10, 20, 30, 40 or 50)
 pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
 
-# reducing train to p-best features
-cgMLST_train_pBestReduced = pBest.fit_transform(cgMLST_train, labels_train)
+# finding and reducing training set to p-best features
+cgMLST_train_pBestReduced = pBest.fit_transform(MLST_train, labels_train)
+# reducing test set based on calculation for best features done on training set
+cgMLST_test_pBestReduced = pBest.transform(MLST_test)
 
 #%%
 
-# fiting model to cgMLST_train for all features and cgMLST_train_pBestReduced for selected features
-# finding best hyperparameters  
-gs_model_RF = gs_RF.fit(cgMLST_train, labels_train)
+# fiting model to MLST_train for all features or cgMLST_train_pBestReduced for selected features in cgMLST data
+# finding best hyperparameters with grid search  
+gs_model_RF = gs_RF.fit(MLST_train, labels_train)
 
-# mean performance results for the different parameters
+# mean performance results for the different hyperparameters tested in grid search
 performanceResults_trainingdata = pd.DataFrame(gs_model_RF.cv_results_)
 performanceResults_trainingdata = performanceResults_trainingdata[['params','mean_test_weighted_f1', 'rank_test_weighted_f1', 
                    'mean_test_macro_f1', 'rank_test_macro_f1',
                    'mean_test_accurcacy', 'rank_test_accurcacy']]
 
 # saving performance result training data
-#performanceResults_trainingdata.to_csv("performanceTrainingdata_RFmodel.csv", index=False)
+performanceResults_trainingdata.to_csv(f"performanceTrainingdata_RFmodel_{MLST_type}MLST.csv", index=False)
 
-# best model
+# hyperparameter and score for best model 
 clf_RF = gs_model_RF.best_estimator_
 print(gs_model_RF.best_params_)
 print(gs_model_RF.best_score_)
 
 #%% 
 
-# feature reduction test set
-cgMLST_test_pBestReduced = pBest.transform(cgMLST_test)
-
-# predicting test using best model on cgMLST_test for all features and cgMLST_test_pBestReduced for selected features
-proba_predict = clf_RF.predict_proba(cgMLST_test)
+# predicting test using best model on MLST_test for all features or cgMLST_test_pBestReduced for selected features
+proba_predict = clf_RF.predict_proba(MLST_test)
 labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 
 #%% 
 
-# percentile best features (10%, 20%, 30%, 40%, 50%), and all
+# percentile best features 10%, 20%, 30%, 40%, 50% or all 
 feature = "all"
-percent = "all features"
+percent = f"{feature} features"
 
 # performance metrics for test prediction
 performanceReport_testdata = classification_report(
@@ -116,7 +118,7 @@ performanceReport_testdata = classification_report(
             output_dict = True)
 
 performanceReport_testdata_df = pd.DataFrame.from_dict(performanceReport_testdata)
-performanceReport_testdata_df.to_csv(f"{feature}_RF_performanceReport_testdata_df.csv")
+performanceReport_testdata_df.to_csv(f"{feature}_RF_performanceReport_testdata_{MLST_type}MLSTdf.csv")
 
 # confusionmatrix
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
@@ -125,8 +127,8 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             display_labels=label_dict.values(),
             xticks_rotation= 'vertical',
             cmap='Greens')
-conf_matrix.ax_.set_title(f"Conf. matrix RF {percent}")
-conf_matrix.figure_.savefig(f'{feature}_confmatRF.png')
+conf_matrix.ax_.set_title(f"Conf. matrix RF {percent} {MLST_type}MLST")
+conf_matrix.figure_.savefig(f'{feature}_confmatRF_{MLST_type}MLST.png')
 
 #%%
 
@@ -143,4 +145,4 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
 # saving performance result test data
-# probability_df.to_csv(f"probability_test_RFmodel_{feature}.csv", index=False)
+probability_df.to_csv(f"probability_test_RFmodel_{feature}_{MLST_type}MLST.csv", index=False)
