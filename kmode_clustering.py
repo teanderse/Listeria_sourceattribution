@@ -8,29 +8,29 @@ from kmodes.kmodes import KModes
 
 #%%
 
-# importing cleaned data
-cleaned_data = pd.read_csv("cleaned_data_forML.csv")
+# importing cleaned data for cgMLST or wgMLST
+MLST_type = "wg" # cg or wg
+cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forML.csv")
 
 #%%
 
 # spliting source labels, cgmlst-data and SRA id-number
 # (assuming SRA_no and Source is first and last column)
-cgMLST_data = cleaned_data.iloc[:, 1:-1]
+MLST_data = cleaned_data.iloc[:, 1:-1]
 labels = cleaned_data.Source
 sample_id = cleaned_data.SRA_no
 
 #%%
 
+# setting seed for reproducibility because of random centroid start
 np.random.seed(3)
 # doing k_mode clustering for 5 clusters
 km = KModes(n_clusters=5, init='random', verbose=1)
-
-clusters = km.fit_predict(cgMLST_data)
+clusters = km.fit_predict(MLST_data)
 
 #%% 
 
 # dataframe for the clusters predicted and their source
-
 labels_true = [list(labels)]
 clusters_predicted = [list(clusters)]
 
@@ -40,5 +40,5 @@ column_headers = ["Source","Cluster"]
 cluster_df = pd.DataFrame(dict(zip(column_headers, df_input)))
 
 # saving performance result test data
-# cluster_df.to_csv("cluster_df.csv", index=False)
+cluster_df.to_csv(f"cluster_{MLST_type}MLSTdf.csv", index=False)
 
