@@ -28,10 +28,11 @@ yencoder = LabelEncoder()
 scaler = StandardScaler()
 xencoder = OrdinalEncoder()
 
-# y being label encoded as
+# y being label encoded
 y = np.array(test_df.coly)
 y = yencoder.fit_transform(y)
 
+# columns stored as x
 # x, x scaled and x label encoded
 x = test_df.iloc[:, 0:-1]
 x_scaled = scaler.fit_transform(x)
@@ -64,10 +65,10 @@ mutualInformation_test_dis = mutualInformation_test_dis.merge(encoded,left_index
 #%%
 # ---------------------------------------------------
 
-# Testing effect of label encoding training data 
+# Testing effect of label encoding training data for cgMLST
 
 # importing cleaned data
-cleaned_data = pd.read_csv("cleaned_data_forML.csv")
+cleaned_data = pd.read_csv("cleaned_data_forML/cgMLSTcleaned_data_forML.csv")
 
 #%%
 
@@ -83,7 +84,7 @@ labels = encoder.fit_transform(labels)
 
 #%%
 
-# split randomly into training(70%) and testing(30%)
+# split randomly into training(70%) and testing(30%) with seed for reproducibility
 cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
         cgMLST_data,
         labels,
@@ -93,30 +94,31 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
-# computing mutual information for columns in cgMLST_train
+# computing mutual information scores for columns in cgMLST training data
 mutualI_raw = mutual_info_classif(cgMLST_train, labels_train, random_state=3, discrete_features=True)
 mutualI_raw = pd.DataFrame({'MI_raw':mutualI_raw})
 mutualI_raw.index = cgMLST_train.columns
 raw_cgMLST = mutualI_raw.sort_values(by="MI_raw", ascending=False)
 raw_cgMLST.head()
 
-# encoding features before feature selection
+# encoding features before computing mutual information
 feature_encoder = OrdinalEncoder()
 cgMLST_train_encoded = feature_encoder.fit_transform(cgMLST_train)
 
-# computing mutual information for columns in scaled cgMLST_train
+# computing mutual information scores for columns in encoded cgMLST training data
 mutualI_encoded = mutual_info_classif(cgMLST_train_encoded, labels_train, random_state=3, discrete_features=True)
 mutualI_encoded = pd.DataFrame({'MI_encoded':mutualI_encoded})
 mutualI_encoded.index = cgMLST_train.columns
 encoded_cgMLST = mutualI_encoded.sort_values(by="MI_encoded", ascending=False)
 encoded_cgMLST.head()
 
-# Comparing raw cgMLST trainigdata with the scaled cgMLST training data
+# Comparing mutual information scores in raw cgMLST trainig data with the encoded cgMLST training data
 mutualInformation_cgMLST = raw_cgMLST.merge(encoded_cgMLST,left_index=True,right_index=True)
+
+# Calculating posible divergense between mutual information scores
 mutualInformation_cgMLST["divergens"] = mutualInformation_cgMLST["MI_raw"]-mutualInformation_cgMLST["MI_encoded"]
-
 print("Max:",mutualInformation_cgMLST["divergens"].max(), "   Min:",mutualInformation_cgMLST["divergens"].min())
-# Max: 0    Min: 0
+# Max: 0    Min: 0, = no divergens between not-encoded and encoded scores found
 
-# saving mutual information calculation for features in train witout scale
-#raw_cgMLST.to_csv("mutualInfo_trainingdata_discrete.csv", index=True)
+# saving mutual information calculation for features in cgMLST train data witout encoding
+raw_cgMLST.to_csv("mutualInfo_trainingdata_discrete.csv", index=True)
