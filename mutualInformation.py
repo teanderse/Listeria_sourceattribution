@@ -4,17 +4,15 @@
 # imports
 import pandas as pd
 import numpy as np 
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import LabelEncoder, OrdinalEncoder, StandardScaler
 from sklearn.feature_selection import mutual_info_classif
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 #%%
 # Testing effects of mutual information on controled test dataframe
-# column with same values as classes in y
+# column with same values as classes in coly
 col1 = [1, 2, 3, 4, 5]*200
-# column with one value fore each class in y, but with som values being large
+# column with one value fore each class in coly, but with som values being large
 col2 = [5, 50, 7, 700, 400]*200
 # column with only one value
 col3 = [1, 1, 1, 1, 1]*200
@@ -28,11 +26,11 @@ yencoder = LabelEncoder()
 scaler = StandardScaler()
 xencoder = OrdinalEncoder()
 
-# y being label encoded
+# column y being label encoded
 y = np.array(test_df.coly)
 y = yencoder.fit_transform(y)
 
-# columns stored as x
+# rest of columns stored as x
 # x, x scaled and x label encoded
 x = test_df.iloc[:, 0:-1]
 x_scaled = scaler.fit_transform(x)
@@ -94,7 +92,7 @@ cgMLST_train, cgMLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
-# computing mutual information scores for columns in cgMLST training data
+# computing mutual information scores for columns in cgMLST training data with source label
 mutualI_raw = mutual_info_classif(cgMLST_train, labels_train, random_state=3, discrete_features=True)
 mutualI_raw = pd.DataFrame({'MI_raw':mutualI_raw})
 mutualI_raw.index = cgMLST_train.columns
@@ -105,7 +103,7 @@ raw_cgMLST.head()
 feature_encoder = OrdinalEncoder()
 cgMLST_train_encoded = feature_encoder.fit_transform(cgMLST_train)
 
-# computing mutual information scores for columns in encoded cgMLST training data
+# computing mutual information scores for columns in encoded cgMLST training data with source label
 mutualI_encoded = mutual_info_classif(cgMLST_train_encoded, labels_train, random_state=3, discrete_features=True)
 mutualI_encoded = pd.DataFrame({'MI_encoded':mutualI_encoded})
 mutualI_encoded.index = cgMLST_train.columns
