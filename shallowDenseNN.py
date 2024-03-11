@@ -60,8 +60,9 @@ cgMLST_test_pBestReduced = pBest.transform(MLST_test)
 #%%
 
 # one hot encoding the labels
-labels_test = OneHotEncoder(sparse_output=False).fit_transform(labels_test.reshape(-1, 1))
-labels_train = OneHotEncoder(sparse_output=False).fit_transform(labels_train.reshape(-1, 1))
+oh_encoder = OneHotEncoder(sparse_output=False)
+labels_train = oh_encoder.fit_transform(labels_train.reshape(-1, 1))
+labels_test = oh_encoder.transform(labels_test.reshape(-1, 1))
 
 #%%
 
@@ -82,13 +83,14 @@ def create_shallowDenseNN(input_dim, neurons, dropout_rate ):
 
 # set up for shallow dense neural network
 # input dimentions for different feature selected data sets of cgMLST or wgMLST
-# all_ = 1734
-# p10 = 174
-# p20 = 347
-# p30 = 520
-# p40 = 694
-# p50 = 867
 wgMLST = 2496
+all_ = 1734
+p10 = 174
+p20 = 347
+p30 = 520
+p40 = 694
+p50 = 867
+
 ShallowDense_model = KerasClassifier(model=create_shallowDenseNN, input_dim=wgMLST, loss="categorical_crossentropy",
                                      optimizer=tf.keras.optimizers.Adam,
                                      metrics=["accuracy", f1_weighted, f1_macro], epochs=100, batch_size=676,
@@ -96,9 +98,9 @@ ShallowDense_model = KerasClassifier(model=create_shallowDenseNN, input_dim=wgML
 
 # tune number of nodes, dropout rate and learning rate
 # hyperparameter for SDNN_model
-learning_rate = [0.0005, 0.0001]
-dropout_rate = [0.3, 0.4]
-nodes = [75, 78, 80]
+learning_rate = [0.001, 0.0001]
+dropout_rate = [0.2, 0.3]
+nodes = [70, 75, 80]
 param_grid_SDNN = [{'model__neurons':nodes, 'optimizer__learning_rate': learning_rate, 'model__dropout_rate':dropout_rate}]
 
 # gridsearch for best parameter with 5-fold cross validation
@@ -123,16 +125,18 @@ print(gs_model_SDNN.best_score_)
 # all features
 neuron_no = 78
 dropout_r = 0.2
-learning_r = 0.0001 # all features
-# learning_r = 0.001 # selected features
+learning_r = 0.0001 # all features MLST
+# learning_r = 0.001 # selected features cgMLST
+
 # input dimentions for different feature selected data sets
-# all_ = 1734
-# p10 = 174
-# p20 = 347
-# p30 = 520
-# p40 = 694
-# p50 = 867
 wgMLST = 2496
+all_ = 1734
+p10 = 174
+p20 = 347
+p30 = 520
+p40 = 694
+p50 = 867
+
 
 # empty lists to append performance metrics
 accu_list_all = list()
@@ -165,25 +169,27 @@ for i in range(1,31):
   test_res = ShallowDense_model_optimized.evaluate(MLST_test, labels_test, return_dict=True)
   test_results.append(test_res)
   test_pred = ShallowDense_model_optimized.predict(MLST_test)
-  np.savetxt(X= test_pred, fname=f"all_shallowDense_testPredict{i}.csv", delimiter=",")
+  np.savetxt(X= test_pred, fname=f"wg_shallowDense_testPredict{i}.csv", delimiter=",")
 
 #%%
 
+features = "wgMLST"
+
 # Saving performance metrics for 30 repeats
-np.savetxt(X= f1W_list_all, fname="f1W_train_all.csv", delimiter=",")
-np.savetxt(X= f1M_list_all, fname="f1M_train_all.csv", delimiter=",")
-np.savetxt(X= accu_list_all, fname="accu_train_all.csv", delimiter=",")
-np.savetxt(X= test_results, fname="testResults_all.csv", delimiter=",")
+np.savetxt(X= f1W_list_all, fname=f"f1W_train_{features}.csv", delimiter=",")
+np.savetxt(X= f1M_list_all, fname=f"f1M_train_{features}.csv", delimiter=",")
+np.savetxt(X= accu_list_all, fname=f"accu_train_{features}.csv", delimiter=",")
+np.savetxt(X= test_results, fname=f"testResults_{features}.csv", delimiter=",")
 
 test_result_df = pd.DataFrame.from_dict(test_results)
-test_result_df.to_csv("testResults_all.csv")
+test_result_df.to_csv(f"testResults_{features}.csv")
 
 #%%
 
 # saving performance report for 30 repeats
 for i in range(1,31):
   # probabilities test into source names
-  proba_predict = np.loadtxt(f'all_shallowDense_testPredict{i}.csv', delimiter=',')
+  proba_predict = np.loadtxt(f'wg_shallowDense_testPredict{i}.csv', delimiter=',')
   labelno_predict = list(np.argmax(proba_predict, axis = 1))
   source_predict=[label_dict[x] for x in labelno_predict]
 
@@ -198,9 +204,12 @@ for i in range(1,31):
               output_dict = True)
 
   performanceReport_testdata_df = pd.DataFrame.from_dict(performanceReport_testdata)
-  performanceReport_testdata_df.to_csv(f"all_performanceReport_testdata_df_{i}.csv")
+  performanceReport_testdata_df.to_csv(f"wg_performanceReport_testdata_df_{i}.csv")
 
 #%% 
+# percentile best features 10%, 20%, 30%, 40%, 50% or all 
+feature = "all"
+percent = f"{feature} features" 
 
 # confusionmatrix
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
@@ -209,5 +218,5 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             display_labels=label_dict.values(),
             xticks_rotation= 'vertical',
             cmap='Greens')
-conf_matrix.ax_.set_title("Conf. matrix SDnn -%")
+conf_matrix.ax_.set_title("Conf. matrix SDNN Conf. {percent} {MLST_type}MLST")
 
