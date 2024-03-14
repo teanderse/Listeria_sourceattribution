@@ -44,7 +44,7 @@ MLST_train, MLST_test, labels_train, labels_test = train_test_split(
 
 #%%
 # setup for support vector clasifier 
-SVM_model = SVC()
+SVMno_model = SVC()
 # setup for support vector pipeline with scaling
 SVM_pipe = make_pipeline(StandardScaler(),
                          SVC())
@@ -56,17 +56,20 @@ param_rangeG = [0.0005, 0.001, 0.002, 0.003, 0.005]
 
 # parameters
 # for SVM_model with no scaling
-#param_grid_SVM = [{'C': param_rangeC, 'gamma': param_rangeG, 'kernel': ['rbf']}]
+param_grid_SVMno = [{'C': param_rangeC, 'gamma': param_rangeG, 'kernel': ['rbf']}]
 # for SVM_pipe with scaling 
 param_grid_SVM = [{'svc__C': param_rangeC, 'svc__gamma': param_rangeG, 'svc__kernel': ['rbf']}]
 
 # 5-fold cross validation with 10 repeats
 cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=3)
 
+# chosing model with/without scaling and setup for grid 
+model = SVM_pipe      # SVMno_model for no scaling or SVM_pipe for scaling
+grid = param_grid_SVM # param_grid_SVMno for SVMno_model or param_grid_SVM for SVM_pipe
+
 # gridsearch for best parameter search
-# estimator: SVM_pipe = scaling, SVM_model = no scaling
-gs_SVM = GridSearchCV(estimator=SVM_pipe, 
-                  param_grid=param_grid_SVM, 
+gs_SVM = GridSearchCV(estimator=model, 
+                  param_grid=grid, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
                   cv=cv,
                   refit='weighted_f1',
