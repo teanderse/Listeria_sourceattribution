@@ -22,8 +22,14 @@ labels = cleaned_data.Source
 sample_id = cleaned_data.SRA_no
 
 # calculating hamming distances
+# normalised hamming distances
 distances = pdist(MLST_data, metric= "hamming")
 dist_tbl = squareform(distances)
+# not normalised hamming distances
+wg_featureLength = 2496
+cg_featureLength = 956
+nonNormalised_dist_tbl = dist_tbl.copy()
+nonNormalised_dist_tbl = nonNormalised_dist_tbl*cg_featureLength
 
 # defining linkage for clustering
 linkage = hc.linkage(distances, method='average')
@@ -36,7 +42,7 @@ colour_map = dict(zip(labels.unique(), colour))
 row_colors = labels.map(colour_map).to_numpy()
 
 # hierarchical clustering using hamming distances visualised in a heatmap
-clusterplot = sns.clustermap(dist_tbl, row_linkage=linkage, col_linkage=linkage, row_colors=row_colors,
+clusterplot = sns.clustermap(nonNormalised_dist_tbl, row_linkage=linkage, col_linkage=linkage, row_colors=row_colors,
               cmap="mako", cbar_kws={"orientation": "horizontal",'label':'Normalised hamming distance'}, 
               cbar_pos=(.25, 0, .7, .03))
 
