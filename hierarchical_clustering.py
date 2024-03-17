@@ -29,7 +29,7 @@ dist_tbl = squareform(distances)
 wg_featureLength = 2496
 cg_featureLength = 956
 nonNormalised_dist_tbl = dist_tbl.copy()
-nonNormalised_dist_tbl = nonNormalised_dist_tbl*cg_featureLength
+nonNormalised_dist_tbl = nonNormalised_dist_tbl*wg_featureLength
 
 # defining linkage for clustering
 linkage = hc.linkage(distances, method='average')
@@ -43,7 +43,7 @@ row_colors = labels.map(colour_map).to_numpy()
 
 # hierarchical clustering using hamming distances visualised in a heatmap
 clusterplot = sns.clustermap(nonNormalised_dist_tbl, row_linkage=linkage, col_linkage=linkage, row_colors=row_colors,
-              cmap="mako", cbar_kws={"orientation": "horizontal",'label':'Normalised hamming distance'}, 
+              cmap="mako", cbar_kws={"orientation": "horizontal",'label':'Hamming distance'}, 
               cbar_pos=(.25, 0, .7, .03))
 
 # adding plot details 
