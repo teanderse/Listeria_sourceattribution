@@ -23,12 +23,6 @@ cgMLST_input["SRA_no"] = cgMLST_input["SRA_no"].str.replace("_pilon_spades", "")
 # joining cgMLST_input with sourcelabel
 cgMLST_in_data = cgMLST_input.join(Sourcelabel_input.set_index("SRA_no"), on="SRA_no")
 
-# remove sources with less than threshold isolats
-isolate_threshold = 15
-cgMLST_in_data = cgMLST_in_data[cgMLST_in_data.groupby(cgMLST_in_data.Source)["Source"].transform('size')>isolate_threshold]
-
-# remove clinical isolates
-cgMLST_in_data = cgMLST_in_data[cgMLST_in_data.Source != "clinical"]
 cgMLST_cleaned_data = cgMLST_in_data.copy()
 
 # remove flags from the cgMLST data
@@ -37,6 +31,9 @@ for col in cgMLST_cols:
     cgMLST_cleaned_data[col] = cgMLST_cleaned_data[col].astype(str).str.replace("INF-", "", regex = False)
     cgMLST_cleaned_data[col] = cgMLST_cleaned_data[col].astype(str).str.replace("*", "", regex = False)
     cgMLST_cleaned_data[col] = pd.to_numeric(cgMLST_cleaned_data[col], errors="coerce")
+    
+# remove clinical isolates
+cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.Source != "clinical"]
                                             
 #%% 
 
@@ -53,6 +50,10 @@ print("Dropped {} columns with over 10% missing values.".format(before_col - cgM
 # removing rows
 cgMLST_cleaned_data.dropna(thresh=(round(before_col*0.9)), axis=0, inplace=True)
 print("Dropped {} rows with over 10% missing values.".format(before_row - cgMLST_cleaned_data.shape[0]))
+
+# remove sources with less than threshold isolats
+isolate_threshold = 15
+cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.groupby(cgMLST_cleaned_data.Source)["Source"].transform('size')>isolate_threshold]
 
 # replacing nan-values with -1
 cgMLST_cleaned_data.fillna(-1, inplace=True)
@@ -79,12 +80,6 @@ wgMLST_input["SRA_no"] = wgMLST_input["SRA_no"].str.replace("_pilon_spades", "")
 # joining wgMLST_input with sourcelabel
 wgMLST_in_data = wgMLST_input.join(Sourcelabel_input.set_index("SRA_no"), on="SRA_no")
 
-# remove sources with less than threshold isolats
-isolate_threshold = 15
-wgMLST_in_data = wgMLST_in_data[wgMLST_in_data.groupby(wgMLST_in_data.Source)["Source"].transform('size')>isolate_threshold]
-
-# remove clinical isolates
-wgMLST_in_data = wgMLST_in_data[wgMLST_in_data.Source != "clinical"]
 wgMLST_cleaned_data = wgMLST_in_data.copy()
 
 # remove flags from the wgMLST data
@@ -92,6 +87,9 @@ wgMLST_cols = wgMLST_cleaned_data.iloc[:, 1:-1].columns.tolist()
 for col in wgMLST_cols: 
     wgMLST_cleaned_data[col] = wgMLST_cleaned_data[col].astype(str).str.replace("INF-", "", regex = False)
     wgMLST_cleaned_data[col] = pd.to_numeric(wgMLST_cleaned_data[col], errors="coerce")
+
+# remove clinical isolates
+wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.Source != "clinical"]
 
 #%% 
 
@@ -104,6 +102,10 @@ wgMLSTbefore_row = wgMLST_cleaned_data.shape[0]
 # removing columns
 wgMLST_cleaned_data.dropna(thresh=(round(wgMLSTbefore_row*0.9)), axis=1, inplace=True)
 print("Dropped {} columns with over 10% missing values.".format(wgMLSTbefore_col - wgMLST_cleaned_data.shape[1]))
+
+# remove sources with less than threshold isolats
+isolate_threshold = 15
+wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.groupby(wgMLST_cleaned_data.Source)["Source"].transform('size')>isolate_threshold]
 
 # replacing nan-values with -1
 wgMLST_cleaned_data.fillna(-1, inplace=True)
