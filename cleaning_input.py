@@ -32,7 +32,10 @@ for col in cgMLST_cols:
     cgMLST_cleaned_data[col] = cgMLST_cleaned_data[col].astype(str).str.replace("*", "", regex = False)
     cgMLST_cleaned_data[col] = pd.to_numeric(cgMLST_cleaned_data[col], errors="coerce")
     
-# remove clinical isolates
+# remove and store clinical isolates
+cgMLST_clinical_samples = cgMLST_cleaned_data[cgMLST_cleaned_data.Source == "clinical"]
+cgMLST_clinical_samples.fillna(-1, inplace=True)
+cgMLST_clinical_samples.to_csv("cgMLST_clinical_samples.csv", index=False)
 cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.Source != "clinical"]
                                             
 #%% 
@@ -88,7 +91,10 @@ for col in wgMLST_cols:
     wgMLST_cleaned_data[col] = wgMLST_cleaned_data[col].astype(str).str.replace("INF-", "", regex = False)
     wgMLST_cleaned_data[col] = pd.to_numeric(wgMLST_cleaned_data[col], errors="coerce")
 
-# remove clinical isolates
+# remove and store clinical isolates
+wgMLST_clinical_samples = wgMLST_cleaned_data[wgMLST_cleaned_data.Source == "clinical"]
+wgMLST_clinical_samples.fillna(-1, inplace=True)
+wgMLST_clinical_samples.to_csv("wgMLST_clinical_samples.csv", index=False)
 wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.Source != "clinical"]
 
 #%% 
