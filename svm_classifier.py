@@ -14,7 +14,7 @@ from sklearn.metrics import classification_report, ConfusionMatrixDisplay
 #%%
 
 # importing cleaned data for cgMLST or wgMLST
-MLST_type = "wg" # cg or wg
+MLST_type = "cg" # cg or wg
 cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forML.csv")
 
 #%%
@@ -142,4 +142,23 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             cmap='Greens')
 conf_matrix.ax_.set_title(f"Conf. matrix SVM/scale {percent} {MLST_type}MLST")
 conf_matrix.figure_.savefig(f'{feature}_confmatSVM_{MLST_type}MLST.png')
+
+#%% 
+
+# reading in the data for the clinical isolates
+clinical_isolates = pd.read_csv(f"cleaned_clinical/{MLST_type}MLST_clinical_samples.csv")
+clinical_data = clinical_isolates.drop(['SRA_no', 'Source'], axis=1)
+clinical_id = clinical_isolates.SRA_no
+
+# predicting source for clinical isolates
+labelno_predict_clinical = clf_SVM.predict(clinical_data)
+source_predict_clinical=[label_dict[x] for x in labelno_predict_clinical]
+
+# dataframe for the predictions
+probability_clinical_df = pd.DataFrame(source_predict_clinical, columns=["prediction"])
+probability_clinical_df.insert(0, "SRA_no", clinical_id)
+
+# saving probability predicted for clinical
+probability_clinical_df.to_csv(f"probability_clinical_SVM_{MLST_type}MLST.csv", index=False)
+
 
