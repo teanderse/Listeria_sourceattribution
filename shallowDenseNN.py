@@ -121,6 +121,13 @@ print(gs_model_SDNN.best_score_)
 
 #%%
 
+# saving training performance from grid search
+performanceResults_trainingdata = pd.DataFrame(gs_model_SDNN.cv_results_)
+performanceResults_trainingdata = performanceResults_trainingdata[['params','mean_test_weighted_f1']]
+performanceResults_trainingdata.to_csv("wg_performanceReport_trainingdata_df.csv")
+
+#%%
+
 # best hyperparmeters set as found in grid search
 # all features
 neuron_no = 78
@@ -219,4 +226,23 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             xticks_rotation= 'vertical',
             cmap='Greens')
 conf_matrix.ax_.set_title("Conf. matrix SDNN Conf. {percent} {MLST_type}MLST")
+
+#%%
+
+# reading in the data for the clinical isolates
+clinical_isolates = pd.read_csv(f"cleaned_clinical/{MLST_type}MLST_clinical_samples.csv")
+clinical_data = clinical_isolates.drop(['SRA_no', 'Source'], axis=1)
+clinical_id = clinical_isolates.SRA_no
+
+# predicting source for clinical isolates
+proba_predict_clinical = test_pred = ShallowDense_model_optimized.predict(clinical_data)
+labelno_predict_clinical = list(np.argmax(proba_predict_clinical, axis = 1))
+source_predict_clinical=[label_dict[x] for x in labelno_predict_clinical]
+
+# dataframe for the predictions
+probability_clinical_df = pd.DataFrame(source_predict_clinical, columns=["prediction"])
+probability_clinical_df.insert(0, "SRA_no", clinical_id)
+
+# saving probability predicted for clinical
+probability_clinical_df.to_csv(f"probability_clinical_SDNN_{MLST_type}MLST.csv.csv", index=False)
 
