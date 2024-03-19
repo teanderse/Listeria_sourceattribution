@@ -3,6 +3,7 @@
 
 # imports
 import pandas as pd
+import numpy as np
 
 #%%
 
@@ -32,10 +33,9 @@ for col in cgMLST_cols:
     cgMLST_cleaned_data[col] = cgMLST_cleaned_data[col].astype(str).str.replace("*", "", regex = False)
     cgMLST_cleaned_data[col] = pd.to_numeric(cgMLST_cleaned_data[col], errors="coerce")
     
-# remove and store clinical isolates
+# remove and store clinical isolates in seperat variable
 cgMLST_clinical_samples = cgMLST_cleaned_data[cgMLST_cleaned_data.Source == "clinical"]
 cgMLST_clinical_samples.fillna(-1, inplace=True)
-cgMLST_clinical_samples.to_csv("cgMLST_clinical_samples.csv", index=False)
 cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.Source != "clinical"]
                                             
 #%% 
@@ -61,8 +61,15 @@ cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.groupby(cgMLST_cle
 # replacing nan-values with -1
 cgMLST_cleaned_data.fillna(-1, inplace=True)
 
-# saving cleaned data
-cgMLST_cleaned_data.to_csv("cgMLSTcleaned_data_forML.csv", index=False)
+#%%
+
+# Remowe dropt columns from clinical isolates
+cols_notdroped = np.intersect1d(cgMLST_clinical_samples.columns, cgMLST_cleaned_data.columns)
+cgMLST_clinical_samples = cgMLST_clinical_samples[cols_notdroped]
+
+# saving cleaned data and clinical isolates
+#cgMLST_cleaned_data.to_csv("cgMLSTcleaned_data_forML.csv", index=False)
+cgMLST_clinical_samples.to_csv("cgMLST_clinical_samples.csv", index=False)
 
 #%%
 
@@ -91,10 +98,9 @@ for col in wgMLST_cols:
     wgMLST_cleaned_data[col] = wgMLST_cleaned_data[col].astype(str).str.replace("INF-", "", regex = False)
     wgMLST_cleaned_data[col] = pd.to_numeric(wgMLST_cleaned_data[col], errors="coerce")
 
-# remove and store clinical isolates
+# remove and store clinical isolates in seperat variable
 wgMLST_clinical_samples = wgMLST_cleaned_data[wgMLST_cleaned_data.Source == "clinical"]
 wgMLST_clinical_samples.fillna(-1, inplace=True)
-wgMLST_clinical_samples.to_csv("wgMLST_clinical_samples.csv", index=False)
 wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.Source != "clinical"]
 
 #%% 
@@ -116,5 +122,11 @@ wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.groupby(wgMLST_cle
 # replacing nan-values with -1
 wgMLST_cleaned_data.fillna(-1, inplace=True)
 
-# saving cleaned data
-wgMLST_cleaned_data.to_csv("wgMLSTcleaned_data_forML.csv", index=False)
+# Remowe dropt columns from clinical isolates
+cols_notdroped = np.intersect1d(wgMLST_clinical_samples.columns, wgMLST_cleaned_data.columns)
+wgMLST_clinical_samples = wgMLST_clinical_samples[cols_notdroped]
+
+# saving cleaned data and clinical isolates
+#wgMLST_cleaned_data.to_csv("wgMLSTcleaned_data_forML.csv", index=False)
+wgMLST_clinical_samples.to_csv("wgMLST_clinical_samples.csv", index=False)
+
