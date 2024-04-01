@@ -93,8 +93,8 @@ p50 = 867
 
 ShallowDense_model = KerasClassifier(model=create_shallowDenseNN, input_dim=wgMLST, loss="categorical_crossentropy",
                                      optimizer=tf.keras.optimizers.Adam,
-                                     metrics=["accuracy", f1_weighted, f1_macro], epochs=100, batch_size=676,
-                                     callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=50))
+                                     metrics=["accuracy", f1_weighted, f1_macro], epochs=200, batch_size=676,
+                                     callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=10))
 
 # tune number of nodes, dropout rate and learning rate
 # hyperparameter for SDNN_model
