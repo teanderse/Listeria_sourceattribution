@@ -81,7 +81,7 @@ def create_shallowDenseNN(input_dim, neurons, dropout_rate ):
 
   return ShallowDense_model
 
-# set up for shallow dense neural network
+# set up for shallow dense neural network model
 # input dimentions for different feature selected data sets of cgMLST or wgMLST
 wgMLST = 2496
 all_ = 1734
