@@ -162,7 +162,7 @@ for i in range(1,31):
   )
 
   ShallowDense_model_optimized.compile(loss="categorical_crossentropy", optimizer=tf.keras.optimizers.Adam(learning_rate=learning_r), metrics=["accuracy", f1_weighted, f1_macro])
-  ShallowDense_model_optimized_history = ShallowDense_model_optimized.fit(MLST_train, labels_train, batch_size=676, epochs=100, callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=8))
+  ShallowDense_model_optimized_history = ShallowDense_model_optimized.fit(MLST_train, labels_train, batch_size=676, epochs=200, callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=10))
   # appending training performanse metrics
   accu = list(ShallowDense_model_optimized_history.history['accuracy'])[-1]
   accu_list_all.append(accu)
