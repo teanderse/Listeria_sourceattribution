@@ -202,7 +202,7 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             display_labels=label_dict.values(),
             xticks_rotation= 'vertical',
             cmap='Greens')
-conf_matrix.ax_.set_title("Conf. matrix SDNN {percent} {MLST_type}MLST")
+conf_matrix.ax_.set_title(f"Conf. matrix SDNN {percent} {MLST_type}MLST")
 # saving confusion matrix
 conf_matrix.figure_.savefig(f'{feature}_confmatSDNN_{MLST_type}MLST.png')
 
@@ -215,7 +215,8 @@ clinical_data = clinical_isolates.drop(['SRA_no', 'Source'], axis=1)
 clinical_id = clinical_isolates.SRA_no
 
 # predicting source for clinical isolates
-proba_predict_clinical = test_pred = ShallowDense_model_optimized.predict(clinical_data)
+proba_predict_clinical = ShallowDense_model_optimized.predict(clinical_data)
+# transforming the predictions into integers and source names
 labelno_predict_clinical = list(np.argmax(proba_predict_clinical, axis = 1))
 source_predict_clinical=[label_dict[x] for x in labelno_predict_clinical]
 
