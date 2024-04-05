@@ -9,7 +9,7 @@ from kmodes.kmodes import KModes
 #%%
 
 # importing cleaned data for cgMLST or wgMLST
-MLST_type = "wg" # cg or wg
+MLST_type = "cg" # cg or wg
 cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forML.csv")
 
 #%%

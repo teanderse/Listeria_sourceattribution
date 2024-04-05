@@ -15,12 +15,12 @@ from scikeras.wrappers import KerasClassifier
 #%%
 
 # importing cleaned data for cgMLST or wgMLST
-MLST_type = "wg" # cg or wg
+MLST_type = "cg" # cg or wg
 cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forML.csv")
 
 #%%
 
-# spliting source labels, cgmlst-data and SRA id-number
+# spliting source labels, MLST-data and SRA id-number
 # (assuming SRA_no and Source is first and last column)
 MLST_data = cleaned_data.iloc[:, 1:-1]
 labels = cleaned_data.Source
@@ -30,12 +30,12 @@ sample_id = cleaned_data.SRA_no
 encoder = LabelEncoder()
 labels_encoded = encoder.fit_transform(labels)
 
-# saving label integer and source name in dictionary
+# saving source label integer and source name in dictionary
 label_dict = dict(zip((encoder.transform(encoder.classes_)), encoder.classes_ ))
 
 #%%
 
-# split randomly into training(70%) and testing(30%) with seed for reproducibility
+# split randomly into training(70%) and testing(30%), stratified by class label, with seed for reproducibility
 MLST_train, MLST_test, labels_train, labels_test = train_test_split(
         MLST_data,
         labels_encoded,
@@ -45,12 +45,13 @@ MLST_train, MLST_test, labels_train, labels_test = train_test_split(
 
 #%% 
 
-# Feature selection only done for cgMLST data
+# feature selection only done for cgMLST data
 
-# feature selection based on mutual information with seed for reproducibility
+# feature selection based on mutual information, with seed for reproducibility
 # percentile best features
 percentile_threshold = 50  #(10, 20, 30, 40 or 50)
-pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
+pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3),
+                        percentile=percentile_threshold)
 
 # finding and reducing training set to p-best features
 cgMLST_train_pBestReduced = pBest.fit_transform(MLST_train, labels_train)
@@ -59,7 +60,7 @@ cgMLST_test_pBestReduced = pBest.transform(MLST_test)
 
 #%%
 
-# one hot encoding the labels
+# one-hot encoding the source labels in both training and test data sets
 oh_encoder = OneHotEncoder(sparse_output=False)
 labels_train = oh_encoder.fit_transform(labels_train.reshape(-1, 1))
 labels_test = oh_encoder.transform(labels_test.reshape(-1, 1))
@@ -72,7 +73,7 @@ f1_weighted =tf.keras.metrics.F1Score(average='weighted', name='f1_weighted')
 
 #%%
 
-# function for making shallow dense neural network models and finding best hyperparameters with gridsearch
+# function for making shallow dense neural network models and finding optimal hyperparameters with gridsearch
 def create_shallowDenseNN(input_dim, neurons, dropout_rate ):
   ShallowDense_model = tf.keras.Sequential()
   ShallowDense_model.add(tf.keras.layers.Dense(neurons, input_dim=input_dim, activation="relu"))
@@ -82,7 +83,7 @@ def create_shallowDenseNN(input_dim, neurons, dropout_rate ):
   return ShallowDense_model
 
 # set up for shallow dense neural network model
-# input dimentions for different feature selected data sets of cgMLST or wgMLST
+# input dimentions for wgMLST data or different feature selected data sets of cgMLST data
 wgMLST = 2496
 all_ = 1734
 p10 = 174
@@ -91,19 +92,21 @@ p30 = 520
 p40 = 694
 p50 = 867
 
-ShallowDense_model = KerasClassifier(model=create_shallowDenseNN, input_dim=wgMLST, loss="categorical_crossentropy",
+ShallowDense_model = KerasClassifier(model=create_shallowDenseNN, input_dim=all_, loss="categorical_crossentropy",
                                      optimizer=tf.keras.optimizers.Adam,
                                      metrics=["accuracy", f1_weighted, f1_macro], epochs=200, batch_size=676,
                                      callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=10))
 
-# tune number of nodes, dropout rate and learning rate
-# hyperparameter for SDNN_model
+# hyperparameter for ShallowDense_model
+# tune number of nodes in hidden layer, dropout rate and learning rate
 learning_rate = [0.001, 0.0001]
 dropout_rate = [0.2, 0.3]
 nodes = [70, 75, 80]
+
+# hyperparameter grid
 param_grid_SDNN = [{'model__neurons':nodes, 'optimizer__learning_rate': learning_rate, 'model__dropout_rate':dropout_rate}]
 
-# gridsearch for best parameter with 5-fold cross validation
+# grid search for search of optimal hyperparameters, with 5-fold cross validation
 gs_SDNN = GridSearchCV(estimator=ShallowDense_model,
                   param_grid=param_grid_SDNN,
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}),
@@ -112,30 +115,30 @@ gs_SDNN = GridSearchCV(estimator=ShallowDense_model,
                   return_train_score=True)
 
 # fitting model to MLST_train for all features or cgMLST_train_pBestReduced for selected features in cgMLST data
-# finding best hyperparameters with grid search 
+# finding opyimal hyperparameters with grid search 
 gs_model_SDNN = gs_SDNN.fit(MLST_train, labels_train)
 
-# hyperparameter and score for best model
+# defining optimal hyperparameter and score for best model 
 print(gs_model_SDNN.best_params_)
 print(gs_model_SDNN.best_score_) 
 
 #%%
 
-# saving training performance from grid search
+# mean performance results for the different hyperparameters tested in grid searc
 performanceResults_trainingdata = pd.DataFrame(gs_model_SDNN.cv_results_)
 performanceResults_trainingdata = performanceResults_trainingdata[['params','mean_test_weighted_f1']]
-performanceResults_trainingdata.to_csv("wg_performanceReport_trainingdata_df.csv")
+# saving performance result training data 
+performanceResults_trainingdata.to_csv(f"performanceTrainingdata_SDNN_{MLST_type}MLST.csv.csv")
 
 #%%
 
-# best hyperparmeters set as found in grid search
-# all features
-neuron_no = 78
+# optimal hyperparmeters set as they were defind by the grid search
+# (here shown with optimal hyperparameters for the cgMLST training data set with all features)
+neuron_no = 80 
 dropout_r = 0.2
-learning_r = 0.0001 # all features MLST
-# learning_r = 0.001 # selected features cgMLST
+learning_r = 0.0001 
 
-# input dimentions for different feature selected data sets
+# input dimentions for wgMLST data or different feature selected data sets of cgMLST data
 wgMLST = 2496
 all_ = 1734
 p10 = 174
@@ -144,18 +147,11 @@ p30 = 520
 p40 = 694
 p50 = 867
 
-
-# empty lists to append performance metrics
-accu_list_all = list()
-f1W_list_all = list()
-f1M_list_all = list()
-test_results= []
-
-# looping over trainig and testing 30 times
+# looping over trainig and testing of model 30 times
 for i in range(1,31):
   ShallowDense_model_optimized = tf.keras.Sequential(
     [
-        tf.keras.layers.Dense(neuron_no, input_dim=wgMLST, activation="relu"),
+        tf.keras.layers.Dense(neuron_no, input_dim=all_, activation="relu"),
         tf.keras.layers.Dropout(dropout_r),
         tf.keras.layers.Dense(5, activation="softmax")
     ]
@@ -163,47 +159,25 @@ for i in range(1,31):
 
   ShallowDense_model_optimized.compile(loss="categorical_crossentropy", optimizer=tf.keras.optimizers.Adam(learning_rate=learning_r), metrics=["accuracy", f1_weighted, f1_macro])
   ShallowDense_model_optimized_history = ShallowDense_model_optimized.fit(MLST_train, labels_train, batch_size=676, epochs=200, callbacks=tf.keras.callbacks.EarlyStopping(monitor='loss', patience=10))
-  # appending training performanse metrics
-  accu = list(ShallowDense_model_optimized_history.history['accuracy'])[-1]
-  accu_list_all.append(accu)
-  f1W = list(ShallowDense_model_optimized_history.history['f1_weighted'])[-1]
-  f1W_list_all.append(f1W)
-  f1M = list(ShallowDense_model_optimized_history.history['f1_macro'])[-1]
-  f1M_list_all.append(f1M)
   
-  # predicting test using best model on MLST_test for all features and cgMLST_test_pBestReduced for selected features in cgMLST data
-  # appending testing performance metrics and saving predictions
-  test_res = ShallowDense_model_optimized.evaluate(MLST_test, labels_test, return_dict=True)
-  test_results.append(test_res)
+  # predicting source for test data using best model on MLST_test for all features or cgMLST_test_pBestReduced for selected features in cgMLST data
+  # saving predictions for each iteration of the loop
   test_pred = ShallowDense_model_optimized.predict(MLST_test)
-  np.savetxt(X= test_pred, fname=f"wg_shallowDense_testPredict{i}.csv", delimiter=",")
+  np.savetxt(X= test_pred, fname=f"shallowDense_testPredict{i}.csv", delimiter=",")
 
 #%%
 
-features = "wgMLST"
-
-# Saving performance metrics for 30 repeats
-np.savetxt(X= f1W_list_all, fname=f"f1W_train_{features}.csv", delimiter=",")
-np.savetxt(X= f1M_list_all, fname=f"f1M_train_{features}.csv", delimiter=",")
-np.savetxt(X= accu_list_all, fname=f"accu_train_{features}.csv", delimiter=",")
-np.savetxt(X= test_results, fname=f"testResults_{features}.csv", delimiter=",")
-
-test_result_df = pd.DataFrame.from_dict(test_results)
-test_result_df.to_csv(f"testResults_{features}.csv")
-
-#%%
-
-# saving performance report for 30 repeats
+# making and saving performance report with metrics for the 30 predictions made by the best model
 for i in range(1,31):
-  # probabilities test into source names
-  proba_predict = np.loadtxt(f'wg_shallowDense_testPredict{i}.csv', delimiter=',')
+  # transforming the predictions into integers and source names
+  proba_predict = np.loadtxt(f'shallowDense_testPredict{i}.csv', delimiter=',')
   labelno_predict = list(np.argmax(proba_predict, axis = 1))
   source_predict=[label_dict[x] for x in labelno_predict]
 
-  # true sources in test into source names
+  # transforming the true, one-hot encoded test labels for source back to integers
   labelno_true = list(np.argmax(labels_test, axis = 1))
-  source_true=[label_dict[x] for x in labelno_true]
-
+  
+  # performance metrics for test prediction 
   performanceReport_testdata = classification_report(
               labelno_true,
               labelno_predict,
@@ -211,24 +185,30 @@ for i in range(1,31):
               output_dict = True)
 
   performanceReport_testdata_df = pd.DataFrame.from_dict(performanceReport_testdata)
-  performanceReport_testdata_df.to_csv(f"wg_performanceReport_testdata_df_{i}.csv")
+  # saving performance metrics for test predictions
+  performanceReport_testdata_df.to_csv(f"performanceReport_testdata_df_{i}.csv")
 
 #%% 
+
+# defining settings for features to save test performance as confusion matix
 # percentile best features 10%, 20%, 30%, 40%, 50% or all 
 feature = "all"
 percent = f"{feature} features" 
 
-# confusionmatrix
+# confusionmatrix for predictions
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labelno_true,
             labelno_predict,
             display_labels=label_dict.values(),
             xticks_rotation= 'vertical',
             cmap='Greens')
-conf_matrix.ax_.set_title("Conf. matrix SDNN Conf. {percent} {MLST_type}MLST")
+conf_matrix.ax_.set_title("Conf. matrix SDNN {percent} {MLST_type}MLST")
+# saving confusion matrix
+conf_matrix.figure_.savefig(f'{feature}_confmatSDNN_{MLST_type}MLST.png')
 
 #%%
 
+# using model to predicting sources for clinical isolates
 # reading in the data for the clinical isolates
 clinical_isolates = pd.read_csv(f"cleaned_clinical/{MLST_type}MLST_clinical_samples.csv")
 clinical_data = clinical_isolates.drop(['SRA_no', 'Source'], axis=1)
@@ -243,6 +223,5 @@ source_predict_clinical=[label_dict[x] for x in labelno_predict_clinical]
 probability_clinical_df = pd.DataFrame(source_predict_clinical, columns=["prediction"])
 probability_clinical_df.insert(0, "SRA_no", clinical_id)
 
-# saving probability predicted for clinical
+# saving source predicted for clinical isolates
 probability_clinical_df.to_csv(f"probability_clinical_SDNN_{MLST_type}MLST.csv.csv", index=False)
-

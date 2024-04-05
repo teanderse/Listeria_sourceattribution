@@ -19,22 +19,22 @@ cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forM
 
 #%%
 
-# spliting source labels, cgmlst-data and SRA id-number
+# spliting source labels, MLST-data and SRA id-number
 # (assuming SRA_no and Source is first and last column)
 MLST_data = cleaned_data.iloc[:, 1:-1]
 labels = cleaned_data.Source
 sample_id = cleaned_data.SRA_no
 
-# encode lables as integers
+# encode source lables as integers
 encoder = LabelEncoder()
 labels = encoder.fit_transform(labels)
 
-# saving label integer and source name in dictionary
+# saving source label integer and source name in dictionary
 label_dict = dict(zip((encoder.transform(encoder.classes_)), encoder.classes_ ))
 
 #%%
 
-# split randomly into training(70%) and testing(30%) with seed for reproducibility
+# split randomly into training(70%) and testing(30%), stratified by source label, with seed for reproducibility
 MLST_train, MLST_test, labels_train, labels_test = train_test_split(
         MLST_data,
         labels,
@@ -48,13 +48,13 @@ MLST_train, MLST_test, labels_train, labels_test = train_test_split(
 # setup for random forest classifier with seed for reproducibility
 RF_model = RandomForestClassifier(random_state=2)
 
-# parameter for RF_model
+# hyperparameter grid for RF_model
 param_grid_RF = [{'n_estimators': [300, 400, 500, 600, 700, 800], 'criterion': ['gini']}]
 
 # 5-fold cross validation with 10 repeats
 cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=3)
 
-# gridsearch for best parameter search
+# grid search for search of optimal hyperparameters
 gs_RF = GridSearchCV(estimator=RF_model, 
                   param_grid=param_grid_RF, 
                   scoring=({'weighted_f1':'f1_weighted', 'macro_f1':'f1_macro', 'accurcacy':'accuracy'}), 
@@ -65,12 +65,13 @@ gs_RF = GridSearchCV(estimator=RF_model,
 
 #%%
 
-# Feature selection only done for cgMLST data
+# feature selection only done for cgMLST data
 
-# feature selection based on mutual information with seed for reproducibility
+# feature selection based on mutual information with, seed for reproducibility
 # percentile best features 
 percentile_threshold = 50  #(10, 20, 30, 40 or 50)
-pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), percentile=percentile_threshold)
+pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3),
+                        percentile=percentile_threshold)
 
 # finding and reducing training set to p-best features
 cgMLST_train_pBestReduced = pBest.fit_transform(MLST_train, labels_train)
@@ -80,7 +81,7 @@ cgMLST_test_pBestReduced = pBest.transform(MLST_test)
 #%%
 
 # fitting model to MLST_train for all features or cgMLST_train_pBestReduced for selected features in cgMLST data
-# finding best hyperparameters with grid search  
+# finding optimal hyperparameters with grid search  
 gs_model_RF = gs_RF.fit(MLST_train, labels_train)
 
 # mean performance results for the different hyperparameters tested in grid search
@@ -92,20 +93,21 @@ performanceResults_trainingdata = performanceResults_trainingdata[['params','mea
 # saving performance result training data
 performanceResults_trainingdata.to_csv(f"performanceTrainingdata_RFmodel_{MLST_type}MLST.csv", index=False)
 
-# hyperparameter and score for best model 
+# defining optimal hyperparameter and score for best model 
 clf_RF = gs_model_RF.best_estimator_
 print(gs_model_RF.best_params_)
 print(gs_model_RF.best_score_)
 
 #%% 
 
-# predicting test using best model on MLST_test for all features or cgMLST_test_pBestReduced for selected features
+# predicting source for test data using best model on MLST_test for all features or cgMLST_test_pBestReduced for selected features in cgMLST data
 proba_predict = clf_RF.predict_proba(MLST_test)
 labelno_predict = list(np.argmax(proba_predict, axis = 1))
 source_predict=[label_dict[x] for x in labelno_predict]
 
 #%% 
 
+# defining settings for features to save test performance data
 # percentile best features 10%, 20%, 30%, 40%, 50% or all 
 feature = "all"
 percent = f"{feature} features"
@@ -118,9 +120,10 @@ performanceReport_testdata = classification_report(
             output_dict = True)
 
 performanceReport_testdata_df = pd.DataFrame.from_dict(performanceReport_testdata)
+# saving performance metrics for test predictions
 performanceReport_testdata_df.to_csv(f"{feature}_RF_performanceReport_testdata_{MLST_type}MLSTdf.csv")
 
-# confusionmatrix
+# confusionmatrix for predictions
 conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labels_test,
             labelno_predict,
@@ -128,11 +131,12 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             xticks_rotation= 'vertical',
             cmap='Greens')
 conf_matrix.ax_.set_title(f"Conf. matrix RF {percent} {MLST_type}MLST")
+# saving confusion matrix
 conf_matrix.figure_.savefig(f'{feature}_confmatRF_{MLST_type}MLST.png')
 
 #%%
 
-# dataframe for the probabilityes predicted
+# dataframe for the probabilities predicted for each source
 source_true=[label_dict[x] for x in labels_test]
 labels_true = [list(source_true)]
 predictions = [list(source_predict)]
@@ -144,11 +148,12 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 
 probability_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 
-# saving probability predicted for test
+# saving probability predicted for test isolates sources
 probability_df.to_csv(f"probability_test_RFmodel_{feature}_{MLST_type}MLST.csv", index=False)
 
 #%% 
 
+# using model to predicting sources for clinical isolates
 # reading in the data for the clinical isolates
 clinical_isolates = pd.read_csv(f"cleaned_clinical/{MLST_type}MLST_clinical_samples.csv")
 clinical_data = clinical_isolates.drop(['SRA_no', 'Source'], axis=1)
@@ -156,10 +161,11 @@ clinical_id = clinical_isolates.SRA_no
 
 # predicting source for clinical isolates
 proba_predict_clinical = clf_RF.predict_proba(clinical_data)
+# source predicted by label and source name
 labelno_predict_clinical = list(np.argmax(proba_predict_clinical, axis = 1))
 source_predict_clinical=[label_dict[x] for x in labelno_predict_clinical]
 
-# dataframe for the probabilityes predicted
+# dataframe for the probabilities predicted
 predictions_clinical = [list(source_predict_clinical)]
 proba_predict_clinical = list(proba_predict_clinical.T)
 predictions_clinical += [list(x) for x in proba_predict_clinical]
@@ -170,5 +176,5 @@ column_headers += ["probability_{}".format(label_dict[x])for x in range(len(labe
 probability_clinical_df = pd.DataFrame(dict(zip(column_headers, df_input))).round(decimals=3)
 probability_clinical_df.insert(0, "SRA_no", clinical_id)
 
-# saving probability predicted for clinical
+# saving source predicted and source probabilities for clinical isolates
 probability_clinical_df.to_csv(f"probability_clinical_RF_{MLST_type}MLST.csv", index=False)

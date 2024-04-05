@@ -10,7 +10,7 @@ import seaborn as sns
 #%%
 
 # importing cleaned data for cgMLST or wgMLST
-MLST_type = "wg" # cg or wg
+MLST_type = "cg" # cg or wg
 cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forML.csv")
 
 #%%
@@ -19,7 +19,6 @@ cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forM
 # (assuming SRA_no and Source is first and last column)
 MLST_data = cleaned_data.iloc[:, 1:-1]
 labels = cleaned_data.Source
-sample_id = cleaned_data.SRA_no
 
 # calculating hamming distances
 # normalised hamming distances
