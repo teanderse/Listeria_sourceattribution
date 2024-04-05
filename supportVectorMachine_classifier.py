@@ -83,7 +83,7 @@ gs_SVM = GridSearchCV(estimator=model,
 # feature selection based on mutual information, with seed for reproducibility
 # percentile best features 
 percentile_threshold = 50 #(10, 20, 30, 40 or 50)
-pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True, random_state=3), 
+pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True), 
                         percentile=percentile_threshold)
 
 # finding and reducing training set to p-best features

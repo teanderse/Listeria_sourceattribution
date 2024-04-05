@@ -77,7 +77,7 @@ cgMLST_clinical_samples = cgMLST_clinical_samples[cols_notdroped]
 cgMLST_cleaned_data.to_csv("cgMLSTcleaned_data_forML.csv", index=False)
 cgMLST_clinical_samples.to_csv("cgMLST_clinical_samples.csv", index=False)
 
-#%%
+#%%----------------------------------------------------------------------------------------------------------
 
 # Cleaning input data for wgMLST
 # wgMLST_input is the results_allels_NoParalogs.tsv file from the allele call and remove gene of chewbbaca.
