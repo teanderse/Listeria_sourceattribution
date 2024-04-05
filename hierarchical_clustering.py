@@ -15,7 +15,7 @@ cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forM
 
 #%%
 
-# spliting source labels, cgmlst-data and SRA id-number
+# spliting source labels, MLST-data and SRA id-number
 # (assuming SRA_no and Source is first and last column)
 MLST_data = cleaned_data.iloc[:, 1:-1]
 labels = cleaned_data.Source
@@ -41,7 +41,7 @@ colour = sns.color_palette("colorblind", 5)
 colour_map = dict(zip(labels.unique(), colour))
 row_colors = labels.map(colour_map).to_numpy()
 
-# hierarchical clustering using hamming distances visualised in a heatmap
+# hierarchical clustering using hamming distances visualised in a heatmap and dendrogram
 clusterplot = sns.clustermap(nonNormalised_dist_tbl, row_linkage=linkage, col_linkage=linkage, row_colors=row_colors,
               cmap="mako", cbar_kws={"orientation": "horizontal",'label':'Hamming distance'}, 
               cbar_pos=(.25, 0, .7, .03))
