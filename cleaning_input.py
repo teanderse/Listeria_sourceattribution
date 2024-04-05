@@ -21,7 +21,7 @@ cgMLST_input.rename(columns={"FILE": "SRA_no"}, inplace=True)
 # removing string from SRA number to match Sourcelabel_input
 cgMLST_input["SRA_no"] = cgMLST_input["SRA_no"].str.replace("_pilon_spades", "")
 
-# joining cgMLST_input with sourcelabel
+# joining cgMLST_input with sourcelabel to add a class variable for the isolates sources
 cgMLST_in_data = cgMLST_input.join(Sourcelabel_input.set_index("SRA_no"), on="SRA_no")
 
 cgMLST_cleaned_data = cgMLST_in_data.copy()
@@ -32,14 +32,20 @@ for col in cgMLST_cols:
     cgMLST_cleaned_data[col] = cgMLST_cleaned_data[col].astype(str).str.replace("INF-", "", regex = False)
     cgMLST_cleaned_data[col] = cgMLST_cleaned_data[col].astype(str).str.replace("*", "", regex = False)
     cgMLST_cleaned_data[col] = pd.to_numeric(cgMLST_cleaned_data[col], errors="coerce")
+
+#%%
     
 # remove and store clinical isolates in seperat variable
 cgMLST_clinical_samples = cgMLST_cleaned_data[cgMLST_cleaned_data.Source == "clinical"]
+# replacing nan-values with -1 in the clinical isolates
 cgMLST_clinical_samples.fillna(-1, inplace=True)
+
+# cgMLST data without clinical isolates
 cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.Source != "clinical"]
                                             
 #%% 
 
+# filtering out nan-values 
 # removing columns and rows with 10% or more missing values
 
 # values before drop based on missing values
@@ -58,17 +64,17 @@ print("Dropped {} rows with over 10% missing values.".format(before_row - cgMLST
 isolate_threshold = 15
 cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.groupby(cgMLST_cleaned_data.Source)["Source"].transform('size')>isolate_threshold]
 
-# replacing nan-values with -1
+# replacing remaining nan-values with -1
 cgMLST_cleaned_data.fillna(-1, inplace=True)
 
 #%%
 
-# Remowe dropt columns from clinical isolates
+# Remowe filtered out columns from clinical isolates
 cols_notdroped = np.intersect1d(cgMLST_clinical_samples.columns, cgMLST_cleaned_data.columns)
 cgMLST_clinical_samples = cgMLST_clinical_samples[cols_notdroped]
 
 # saving cleaned data and clinical isolates
-#cgMLST_cleaned_data.to_csv("cgMLSTcleaned_data_forML.csv", index=False)
+cgMLST_cleaned_data.to_csv("cgMLSTcleaned_data_forML.csv", index=False)
 cgMLST_clinical_samples.to_csv("cgMLST_clinical_samples.csv", index=False)
 
 #%%
@@ -87,7 +93,7 @@ wgMLST_input.rename(columns={"FILE": "SRA_no"}, inplace=True)
 # removing string from SRA number to match Sourcelabel_input
 wgMLST_input["SRA_no"] = wgMLST_input["SRA_no"].str.replace("_pilon_spades", "")
 
-# joining wgMLST_input with sourcelabel
+# joining wgMLST_input with sourcelabel to add a class variable for the isolates sources
 wgMLST_in_data = wgMLST_input.join(Sourcelabel_input.set_index("SRA_no"), on="SRA_no")
 
 wgMLST_cleaned_data = wgMLST_in_data.copy()
@@ -98,13 +104,19 @@ for col in wgMLST_cols:
     wgMLST_cleaned_data[col] = wgMLST_cleaned_data[col].astype(str).str.replace("INF-", "", regex = False)
     wgMLST_cleaned_data[col] = pd.to_numeric(wgMLST_cleaned_data[col], errors="coerce")
 
+#%%
+
 # remove and store clinical isolates in seperat variable
 wgMLST_clinical_samples = wgMLST_cleaned_data[wgMLST_cleaned_data.Source == "clinical"]
+# replacing nan-values with -1 in the clinical isolates
 wgMLST_clinical_samples.fillna(-1, inplace=True)
+
+# wgMLST data without clinical isolates
 wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.Source != "clinical"]
 
 #%% 
 
+# filtering out nan-values
 # removing columns with 10% or more missing values
 
 # values before drop based on missing values
@@ -127,6 +139,5 @@ cols_notdroped = np.intersect1d(wgMLST_clinical_samples.columns, wgMLST_cleaned_
 wgMLST_clinical_samples = wgMLST_clinical_samples[cols_notdroped]
 
 # saving cleaned data and clinical isolates
-#wgMLST_cleaned_data.to_csv("wgMLSTcleaned_data_forML.csv", index=False)
+wgMLST_cleaned_data.to_csv("wgMLSTcleaned_data_forML.csv", index=False)
 wgMLST_clinical_samples.to_csv("wgMLST_clinical_samples.csv", index=False)
-
