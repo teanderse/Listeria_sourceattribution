@@ -69,11 +69,11 @@ cgMLST_cleaned_data.fillna(-1, inplace=True)
 
 #%%
 
-# Remowe filtered out columns from clinical isolates
+# remove the filtered out columns from clinical isolates
 cols_notdroped = np.intersect1d(cgMLST_clinical_samples.columns, cgMLST_cleaned_data.columns)
 cgMLST_clinical_samples = cgMLST_clinical_samples[cols_notdroped]
 
-# saving cleaned data and clinical isolates
+# saving cleaned cgMLST data and clinical isolates
 cgMLST_cleaned_data.to_csv("cgMLSTcleaned_data_forML.csv", index=False)
 cgMLST_clinical_samples.to_csv("cgMLST_clinical_samples.csv", index=False)
 
@@ -134,10 +134,10 @@ wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.groupby(wgMLST_cle
 # replacing nan-values with -1
 wgMLST_cleaned_data.fillna(-1, inplace=True)
 
-# Remowe dropt columns from clinical isolates
+# remove the filtered out columns from clinical isolates
 cols_notdroped = np.intersect1d(wgMLST_clinical_samples.columns, wgMLST_cleaned_data.columns)
 wgMLST_clinical_samples = wgMLST_clinical_samples[cols_notdroped]
 
-# saving cleaned data and clinical isolates
+# saving cleaned wgMLST data and clinical isolates
 wgMLST_cleaned_data.to_csv("wgMLSTcleaned_data_forML.csv", index=False)
 wgMLST_clinical_samples.to_csv("wgMLST_clinical_samples.csv", index=False)

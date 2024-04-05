@@ -14,7 +14,7 @@ cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forM
 
 #%%
 
-# spliting source labels, cg/wgMLST-data and SRA id-number
+# spliting source labels, MLST-data and SRA id-number
 # (assuming SRA_no and Source is first and last column)
 MLST_data = cleaned_data.iloc[:, 1:-1]
 
