@@ -47,7 +47,7 @@ MLST_train, MLST_test, labels_train, labels_test = train_test_split(
 
 # feature selection only done for cgMLST data
 
-# feature selection based on mutual information, with seed for reproducibility
+# feature selection based on mutual information
 # percentile best features
 percentile_threshold = 50  #(10, 20, 30, 40 or 50)
 pBest= SelectPercentile(score_func=partial(mutual_info_classif, discrete_features=True),
