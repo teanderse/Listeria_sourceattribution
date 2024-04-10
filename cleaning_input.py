@@ -36,12 +36,12 @@ for col in cgMLST_cols:
 #%%
     
 # remove and store clinical isolates in seperat variable
-cgMLST_clinical_samples = cgMLST_cleaned_data[cgMLST_cleaned_data.Source == "clinical"]
+cgMLST_clinical_samples = cgMLST_cleaned_data.copy()[cgMLST_cleaned_data.Source == "clinical"]
 # replacing nan-values with -1 in the clinical isolates
 cgMLST_clinical_samples.fillna(-1, inplace=True)
 
 # cgMLST data without clinical isolates
-cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.Source != "clinical"]
+cgMLST_cleaned_data = cgMLST_cleaned_data.copy()[cgMLST_cleaned_data.Source != "clinical"]
                                             
 #%% 
 
@@ -107,12 +107,12 @@ for col in wgMLST_cols:
 #%%
 
 # remove and store clinical isolates in seperat variable
-wgMLST_clinical_samples = wgMLST_cleaned_data[wgMLST_cleaned_data.Source == "clinical"]
+wgMLST_clinical_samples = wgMLST_cleaned_data.copy()[wgMLST_cleaned_data.Source == "clinical"]
 # replacing nan-values with -1 in the clinical isolates
 wgMLST_clinical_samples.fillna(-1, inplace=True)
 
 # wgMLST data without clinical isolates
-wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.Source != "clinical"]
+wgMLST_cleaned_data = wgMLST_cleaned_data.copy()[wgMLST_cleaned_data.Source != "clinical"]
 
 #%% 
 
