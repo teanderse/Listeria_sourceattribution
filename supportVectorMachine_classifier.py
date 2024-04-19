@@ -141,7 +141,8 @@ conf_matrix = ConfusionMatrixDisplay.from_predictions(
             labelno_predict,
             display_labels=label_dict.values(),
             xticks_rotation= 'vertical',
-            cmap='Greens')
+            cmap='Greens',
+            normalize='true')
 conf_matrix.ax_.set_title(f"Conf. matrix SVM/scale {percent} {MLST_type}MLST")
 # saving consution matrix
 conf_matrix.figure_.savefig(f'{feature}_confmatSVM_{MLST_type}MLST.png')

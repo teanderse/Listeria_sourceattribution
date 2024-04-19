@@ -36,12 +36,12 @@ for col in cgMLST_cols:
 #%%
     
 # remove and store clinical isolates in seperat variable
-cgMLST_clinical_samples = cgMLST_cleaned_data.copy()[cgMLST_cleaned_data.Source == "clinical"]
+cgMLST_clinical_samples = cgMLST_cleaned_data.loc[cgMLST_cleaned_data["Source"] == "clinical"].copy()
 # replacing nan-values with -1 in the clinical isolates
 cgMLST_clinical_samples.fillna(-1, inplace=True)
 
 # cgMLST data without clinical isolates
-cgMLST_cleaned_data = cgMLST_cleaned_data.copy()[cgMLST_cleaned_data.Source != "clinical"]
+cgMLST_filtered_data = cgMLST_cleaned_data.loc[cgMLST_cleaned_data.Source != "clinical"].copy()
                                             
 #%% 
 
@@ -49,32 +49,32 @@ cgMLST_cleaned_data = cgMLST_cleaned_data.copy()[cgMLST_cleaned_data.Source != "
 # removing columns and rows with 10% or more missing values
 
 # values before drop based on missing values
-before_col = cgMLST_cleaned_data.shape[1]
-before_row = cgMLST_cleaned_data.shape[0]
-
-# removing columns
-cgMLST_cleaned_data.dropna(thresh=(round(before_row*0.9)), axis=1, inplace=True)
-print("Dropped {} columns with over 10% missing values.".format(before_col - cgMLST_cleaned_data.shape[1]))
+before_row = cgMLST_filtered_data.shape[0]
+before_col = cgMLST_filtered_data.shape[1]
 
 # removing rows
-cgMLST_cleaned_data.dropna(thresh=(round(before_col*0.9)), axis=0, inplace=True)
-print("Dropped {} rows with over 10% missing values.".format(before_row - cgMLST_cleaned_data.shape[0]))
+cgMLST_filtered_data.dropna(thresh=(round(before_col*0.9)), axis=0, inplace=True)
+print("Dropped {} rows with over 10% missing values.".format(before_row - cgMLST_filtered_data.shape[0]))
+
+# removing columns
+cgMLST_filtered_data.dropna(thresh=(round(before_row*0.9)), axis=1, inplace=True)
+print("Dropped {} columns with over 10% missing values.".format(before_col - cgMLST_filtered_data.shape[1]))
 
 # remove sources with less than threshold isolats
 isolate_threshold = 15
-cgMLST_cleaned_data = cgMLST_cleaned_data[cgMLST_cleaned_data.groupby(cgMLST_cleaned_data.Source)["Source"].transform('size')>isolate_threshold]
+cgMLST_filtered_data = cgMLST_filtered_data[cgMLST_filtered_data.groupby(cgMLST_filtered_data.Source)["Source"].transform('size')>isolate_threshold]
 
 # replacing remaining nan-values with -1
-cgMLST_cleaned_data.fillna(-1, inplace=True)
+cgMLST_filtered_data.fillna(-1, inplace=True)
 
 #%%
 
 # remove the filtered out columns from clinical isolates
-cols_notdroped = np.intersect1d(cgMLST_clinical_samples.columns, cgMLST_cleaned_data.columns)
+cols_notdroped = np.intersect1d(cgMLST_clinical_samples.columns, cgMLST_filtered_data.columns)
 cgMLST_clinical_samples = cgMLST_clinical_samples[cols_notdroped]
 
 # saving cleaned cgMLST data and clinical isolates
-cgMLST_cleaned_data.to_csv("cgMLSTcleaned_data_forML.csv", index=False)
+cgMLST_filtered_data.to_csv("cgMLSTcleaned_data_forML.csv", index=False)
 cgMLST_clinical_samples.to_csv("cgMLST_clinical_samples.csv", index=False)
 
 #%%----------------------------------------------------------------------------------------------------------
@@ -102,17 +102,18 @@ wgMLST_cleaned_data = wgMLST_in_data.copy()
 wgMLST_cols = wgMLST_cleaned_data.iloc[:, 1:-1].columns.tolist()
 for col in wgMLST_cols: 
     wgMLST_cleaned_data[col] = wgMLST_cleaned_data[col].astype(str).str.replace("INF-", "", regex = False)
+    wgMLST_cleaned_data[col] = wgMLST_cleaned_data[col].astype(str).str.replace("*", "", regex = False)
     wgMLST_cleaned_data[col] = pd.to_numeric(wgMLST_cleaned_data[col], errors="coerce")
 
 #%%
 
 # remove and store clinical isolates in seperat variable
-wgMLST_clinical_samples = wgMLST_cleaned_data.copy()[wgMLST_cleaned_data.Source == "clinical"]
+wgMLST_clinical_samples = wgMLST_cleaned_data.loc[wgMLST_cleaned_data["Source"] == "clinical"].copy()
 # replacing nan-values with -1 in the clinical isolates
 wgMLST_clinical_samples.fillna(-1, inplace=True)
 
 # wgMLST data without clinical isolates
-wgMLST_cleaned_data = wgMLST_cleaned_data.copy()[wgMLST_cleaned_data.Source != "clinical"]
+wgMLST_filtered_data = wgMLST_cleaned_data.loc[wgMLST_cleaned_data["Source"] != "clinical"].copy()
 
 #%% 
 
@@ -120,24 +121,24 @@ wgMLST_cleaned_data = wgMLST_cleaned_data.copy()[wgMLST_cleaned_data.Source != "
 # removing columns with 10% or more missing values
 
 # values before drop based on missing values
-wgMLSTbefore_col = wgMLST_cleaned_data.shape[1]
-wgMLSTbefore_row = wgMLST_cleaned_data.shape[0]
+wgMLSTbefore_col = wgMLST_filtered_data.shape[1]
+wgMLSTbefore_row = wgMLST_filtered_data.shape[0]
 
 # removing columns
-wgMLST_cleaned_data.dropna(thresh=(round(wgMLSTbefore_row*0.9)), axis=1, inplace=True)
-print("Dropped {} columns with over 10% missing values.".format(wgMLSTbefore_col - wgMLST_cleaned_data.shape[1]))
+wgMLST_filtered_data.dropna(thresh=(round(wgMLSTbefore_row*0.9)), axis=1, inplace=True)
+print("Dropped {} columns with over 10% missing values.".format(wgMLSTbefore_col - wgMLST_filtered_data.shape[1]))
 
 # remove sources with less than threshold isolats
 isolate_threshold = 15
-wgMLST_cleaned_data = wgMLST_cleaned_data[wgMLST_cleaned_data.groupby(wgMLST_cleaned_data.Source)["Source"].transform('size')>isolate_threshold]
+wgMLST_filtered_data = wgMLST_filtered_data[wgMLST_filtered_data.groupby(wgMLST_filtered_data.Source)["Source"].transform('size')>isolate_threshold]
 
 # replacing nan-values with -1
-wgMLST_cleaned_data.fillna(-1, inplace=True)
+wgMLST_filtered_data.fillna(-1, inplace=True)
 
 # remove the filtered out columns from clinical isolates
-cols_notdroped = np.intersect1d(wgMLST_clinical_samples.columns, wgMLST_cleaned_data.columns)
+cols_notdroped = np.intersect1d(wgMLST_clinical_samples.columns, wgMLST_filtered_data.columns)
 wgMLST_clinical_samples = wgMLST_clinical_samples[cols_notdroped]
 
 # saving cleaned wgMLST data and clinical isolates
-wgMLST_cleaned_data.to_csv("wgMLSTcleaned_data_forML.csv", index=False)
+wgMLST_filtered_data.to_csv("wgMLSTcleaned_data_forML.csv", index=False)
 wgMLST_clinical_samples.to_csv("wgMLST_clinical_samples.csv", index=False)
