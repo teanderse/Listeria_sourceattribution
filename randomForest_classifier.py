@@ -179,3 +179,4 @@ probability_clinical_df.insert(0, "SRA_no", clinical_id)
 
 # saving source predicted and source probabilities for clinical isolates
 probability_clinical_df.to_csv(f"probability_clinical_RF_{MLST_type}MLST.csv", index=False)
+

@@ -142,3 +142,4 @@ wgMLST_clinical_samples = wgMLST_clinical_samples[cols_notdroped]
 # saving cleaned wgMLST data and clinical isolates
 wgMLST_filtered_data.to_csv("wgMLSTcleaned_data_forML.csv", index=False)
 wgMLST_clinical_samples.to_csv("wgMLST_clinical_samples.csv", index=False)
+
