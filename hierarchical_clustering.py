@@ -10,7 +10,7 @@ import seaborn as sns
 #%%
 
 # importing cleaned data for cgMLST or wgMLST
-MLST_type = "wg" # cg or wg
+MLST_type = "cg" # cg or wg
 cleaned_data = pd.read_csv(f"cleaned_data_forML/{MLST_type}MLSTcleaned_data_forML.csv")
 
 #%%
@@ -28,7 +28,7 @@ dist_tbl = squareform(distances)
 wg_featureLength = 2496
 cg_featureLength = 1734
 nonNormalised_dist_tbl = dist_tbl.copy()
-nonNormalised_dist_tbl = nonNormalised_dist_tbl*wg_featureLength
+nonNormalised_dist_tbl = nonNormalised_dist_tbl*cg_featureLength
 nonNormalised_distances = squareform(nonNormalised_dist_tbl)
 
 # defining linkage for clustering
