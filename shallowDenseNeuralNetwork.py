@@ -124,7 +124,7 @@ print(gs_model_SDNN.best_score_)
 
 #%%
 
-# mean performance results for the different hyperparameters tested in grid searc
+# mean performance results for the different hyperparameters tested in grid search
 performanceResults_trainingdata = pd.DataFrame(gs_model_SDNN.cv_results_)
 performanceResults_trainingdata = performanceResults_trainingdata[['params','mean_test_weighted_f1']]
 # saving performance result training data 
